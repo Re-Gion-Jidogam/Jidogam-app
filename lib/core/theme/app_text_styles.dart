@@ -85,4 +85,46 @@ abstract final class AppTextStyles {
     fontSize: 8,
     fontWeight: FontWeight.w600,
   );
+
+  // ── Bottom sheet / forms ──────────────────────────────────────
+  /// 바텀시트 타이틀 — SemiBold 14, gray800.
+  static final TextStyle sheetTitle = _base.copyWith(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+    color: AppColors.sheetTitle,
+  );
+
+  /// 입력값 텍스트 — Medium 14, gray900.
+  static final TextStyle field = _base.copyWith(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// 입력 placeholder — Medium 14, gray600.
+  static final TextStyle fieldHint = _base.copyWith(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textMuted,
+  );
+
+  /// 카운터/트레일링 — Medium 12, gray600.
+  static final TextStyle fieldTrailing = _base.copyWith(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textMuted,
+  );
+
+  /// 헬퍼/에러 텍스트 — Medium 12 (색은 상태별로 지정).
+  static final TextStyle helper = _base.copyWith(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+  );
+
+  /// CTA 버튼 라벨 — SemiBold 14, white.
+  static final TextStyle button = _base.copyWith(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.gray0,
+  );
 }

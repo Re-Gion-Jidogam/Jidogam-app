@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 abstract final class AppColors {
   // ── Raw palette (Figma variables) ─────────────────────────────
   static const Color gray900 = Color(0xFF262624);
+  static const Color gray800 = Color(0xFF52534E);
   static const Color gray700 = Color(0xFF7C7F76);
   static const Color gray600 = Color(0xFFA1A499);
   static const Color gray200 = Color(0xFFF2F4ED);
@@ -14,6 +15,9 @@ abstract final class AppColors {
 
   static const Color primary300 = Color(0xFFA2CD20);
   static const Color primary400 = Color(0xFF7EA310);
+
+  static const Color red200 = Color(0xFFF03E31);
+  static const Color red400 = Color(0xFFBF1004);
 
   // ── Semantic aliases ──────────────────────────────────────────
   /// 스크린 배경(#F5F5F5).
@@ -25,6 +29,18 @@ abstract final class AppColors {
   static const Color textMuted = gray600;
 
   static const Color border = gray200;
+
+  /// 바텀시트 타이틀 색상.
+  static const Color sheetTitle = gray800;
+
+  /// 입력 필드 포커스/유효 상태(초록) 테두리.
+  static const Color fieldFocus = primary300;
+
+  /// 입력 필드 에러 테두리.
+  static const Color fieldError = red200;
+
+  /// 에러 헬퍼 텍스트.
+  static const Color errorText = red400;
 
   /// BNB 활성 탭 색상.
   static const Color navActive = primary400;

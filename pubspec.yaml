@@ -19,6 +19,9 @@ dependencies:
   # SVG icons exported from Figma
   flutter_svg: ^2.0.16
 
+  # Lottie animations (confetti on signup completion)
+  lottie: ^3.1.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,6 +34,7 @@ flutter:
   assets:
     - assets/icons/
     - assets/images/
+    - assets/lottie/
 
   fonts:
     - family: Pretendard
