@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -84,9 +86,13 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
     final MediaQueryData media = MediaQuery.of(context);
     final double keyboard = media.viewInsets.bottom;
     final double bottomPad = keyboard > 0 ? keyboard : media.padding.bottom;
+    // 키보드 위 사용 가능한 최대 높이.
+    final double available =
+        media.size.height - media.padding.top - 8 - bottomPad;
+    // 키보드가 없을 땐 화면을 다 채우지 않고 적당한 높이(≈60%)로,
+    // 키보드가 있으면 그 위 공간을 꽉 채운다(디자인의 full 상태).
     final double height =
-        (media.size.height - media.padding.top - 8 - bottomPad)
-            .clamp(320.0, media.size.height);
+        keyboard > 0 ? available : math.min(media.size.height * 0.6, available);
 
     return PopScope(
       canPop: step != AuthStep.signupForm,
