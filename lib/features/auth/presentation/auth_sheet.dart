@@ -89,10 +89,9 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
     // 키보드 위 사용 가능한 최대 높이.
     final double available =
         media.size.height - media.padding.top - 8 - bottomPad;
-    // 키보드가 없을 땐 화면을 다 채우지 않고 적당한 높이(≈60%)로,
-    // 키보드가 있으면 그 위 공간을 꽉 채운다(디자인의 full 상태).
+    // 컨벤션: idle 은 half(45vh), 키보드가 올라오면 그 위 공간을 채워 full(95vh).
     final double height =
-        keyboard > 0 ? available : math.min(media.size.height * 0.6, available);
+        keyboard > 0 ? available : math.min(media.size.height * 0.45, available);
 
     return PopScope(
       canPop: step != AuthStep.signupForm,
