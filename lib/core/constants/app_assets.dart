@@ -10,6 +10,10 @@ abstract final class AppIcons {
   static const String bnbProfile = '$_base/bnb_profile.svg';
 }
 
+abstract final class AppLottie {
+  static const String confetti = 'assets/lottie/confetti.json';
+}
+
 abstract final class AppImages {
   static const String _base = 'assets/images';
 

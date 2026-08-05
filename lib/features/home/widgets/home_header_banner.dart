@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/chevron_right.dart';
+import '../../auth/application/session.dart';
+import '../../auth/presentation/auth_sheet.dart';
 
-/// 상단 프로모 배너 — "나만의 첫 가이드북 만들기" (로그아웃 상태).
-class HomeHeaderBanner extends StatelessWidget {
-  const HomeHeaderBanner({super.key, this.onTap});
-
-  final VoidCallback? onTap;
+/// 상단 프로모 배너. 비로그인 시 인증 시트를 여는 CTA,
+/// 로그인 시 환영 문구를 보여준다.
+class HomeHeaderBanner extends ConsumerWidget {
+  const HomeHeaderBanner({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppSession? session = ref.watch(sessionProvider);
+    final bool loggedIn = session != null;
+
+    final String title =
+        loggedIn ? '${session.nickname}님, 환영해요' : '나만의 첫 가이드북 만들기';
+    final String subtitle = loggedIn ? '즐거운 여행 되세요' : '로그인해서 시작하기';
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+      onTap: loggedIn ? null : () => showAuthSheet(context, ref),
       child: Container(
         height: 110,
         clipBehavior: Clip.antiAlias,
@@ -42,16 +51,23 @@ class HomeHeaderBanner extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(
-                        '나만의 첫 가이드북 만들기',
-                        style: AppTextStyles.title18,
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.title18,
+                        ),
                       ),
-                      const SizedBox(width: 4),
-                      const ChevronRight(length: 11, color: AppColors.gray900),
+                      if (!loggedIn) ...<Widget>[
+                        const SizedBox(width: 4),
+                        const ChevronRight(
+                            length: 11, color: AppColors.gray900),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text('로그인해서 시작하기', style: AppTextStyles.bannerSubtitle),
+                  Text(subtitle, style: AppTextStyles.bannerSubtitle),
                 ],
               ),
             ),
