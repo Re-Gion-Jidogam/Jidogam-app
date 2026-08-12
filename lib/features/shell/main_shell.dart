@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../home/home_page.dart';
-import '../map/map_page.dart';
+import '../map/presentation/map_page.dart';
 import '../profile/profile_page.dart';
 import '../stamp/stamp_page.dart';
 import 'providers/nav_provider.dart';
@@ -24,6 +24,9 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final int index = ref.watch(navIndexProvider);
 
+    // 지도 탭(1)은 전체화면 지도라 BNB를 숨긴다(디자인: 뒤로가기 버튼으로 복귀).
+    final bool showNavBar = index != 1;
+
     return Scaffold(
       body: Stack(
         children: <Widget>[
@@ -33,10 +36,11 @@ class MainShell extends ConsumerWidget {
               child: IndexedStack(index: index, children: _pages),
             ),
           ),
-          const Align(
-            alignment: Alignment.bottomCenter,
-            child: BottomNavBar(),
-          ),
+          if (showNavBar)
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: BottomNavBar(),
+            ),
         ],
       ),
     );
