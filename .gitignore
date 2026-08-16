@@ -44,6 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# 로컬 미리보기용 web 플랫폼 폴더 (개인 환경 전용, 공유 안 함)
+/web/
+
 # Environment / secrets
 .env
 .env.*
