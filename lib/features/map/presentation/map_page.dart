@@ -8,11 +8,13 @@ import '../../../core/widgets/resizable_bottom_sheet.dart';
 import '../../shell/providers/nav_provider.dart';
 import '../data/map_repository.dart';
 import '../map_view.dart';
+import '../models/place.dart';
 import '../models/stamp.dart';
 import '../providers/map_providers.dart';
 import 'widgets/current_location_button.dart';
 import 'widgets/map_search_field.dart';
 import 'widgets/map_segmented_control.dart';
+import 'widgets/place_list_card.dart';
 import 'widgets/stamp_card.dart';
 
 /// 지도 탭 — 지도 + 상단 세그먼트 + 리사이즈 바텀시트(내 도장).
@@ -39,7 +41,7 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   String _searchHint(MapSegment segment) => switch (segment) {
         MapSegment.myStamp => '내가 찍은 도장 검색하기',
-        MapSegment.place => '장소 검색하기',
+        MapSegment.place => '어디로 가볼까요?',
         MapSegment.guidebook => '내 가이드북 검색',
       };
 
@@ -47,6 +49,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   Widget build(BuildContext context) {
     final MapSegment segment = ref.watch(mapSegmentProvider);
     final List<Stamp> stamps = ref.watch(myStampsProvider);
+    final List<Place> places = ref.watch(recommendedPlacesProvider);
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -115,6 +118,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 scrollController: scrollController,
                 segment: segment,
                 stamps: stamps,
+                places: places,
                 searchHint: _searchHint(segment),
               ),
             ),
@@ -131,12 +135,14 @@ class _SheetContent extends StatelessWidget {
     required this.scrollController,
     required this.segment,
     required this.stamps,
+    required this.places,
     required this.searchHint,
   });
 
   final ScrollController scrollController;
   final MapSegment segment;
   final List<Stamp> stamps;
+  final List<Place> places;
   final String searchHint;
 
   @override
@@ -147,10 +153,17 @@ class _SheetContent extends StatelessWidget {
       children: <Widget>[
         MapSearchField(hint: searchHint),
         const SizedBox(height: 24),
-        if (segment == MapSegment.myStamp)
-          ..._myStamp()
-        else
-          _comingSoon(segment),
+        switch (segment) {
+          MapSegment.myStamp => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _myStamp(),
+            ),
+          MapSegment.place => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _place(),
+            ),
+          MapSegment.guidebook => _comingSoon(segment),
+        },
       ],
     );
   }
@@ -162,6 +175,17 @@ class _SheetContent extends StatelessWidget {
       for (int i = 0; i < stamps.length; i++) ...<Widget>[
         if (i > 0) const SizedBox(height: 12),
         StampCard(stamps[i]),
+      ],
+    ];
+  }
+
+  List<Widget> _place() {
+    return <Widget>[
+      Text('여기는 어때요?', style: AppTextStyles.title18),
+      const SizedBox(height: 12),
+      for (int i = 0; i < places.length; i++) ...<Widget>[
+        if (i > 0) const SizedBox(height: 12),
+        PlaceListCard(places[i]),
       ],
     ];
   }
