@@ -38,17 +38,19 @@ class PlaceListCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(place.category, style: AppTextStyles.placeMeta),
+                  Text(place.categoryName, style: AppTextStyles.placeMeta),
                   const SizedBox(width: 4),
                   Text('·', style: AppTextStyles.placeMeta),
                   const SizedBox(width: 4),
-                  AppSvg(AppIcons.star, size: 8, color: AppColors.textSecondary),
-                  const SizedBox(width: 2),
+                  if (place.rating != null) ...<Widget>[
+                    AppSvg(AppIcons.star, size: 8, color: AppColors.textSecondary),
+                    const SizedBox(width: 2),
+                  ],
                   Text(_rating(place.rating), style: AppTextStyles.placeMeta),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(place.address, style: AppTextStyles.placeMeta),
+              Text(place.roadAddress, style: AppTextStyles.placeMeta),
             ],
           ),
         ),
@@ -56,6 +58,9 @@ class PlaceListCard extends StatelessWidget {
     );
   }
 
-  String _rating(double v) =>
-      v == v.roundToDouble() ? v.toStringAsFixed(1) : v.toString();
+  /// 서버 응답엔 평점이 없다 — 리뷰 API 연동 전까지 null이면 '별점없음'.
+  String _rating(double? v) {
+    if (v == null) return '별점없음';
+    return v == v.roundToDouble() ? v.toStringAsFixed(1) : v.toString();
+  }
 }

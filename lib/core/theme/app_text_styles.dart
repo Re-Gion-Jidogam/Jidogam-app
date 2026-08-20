@@ -36,6 +36,21 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w700,
   );
 
+  /// CTA 화면 타이틀 — Bold 24, line-height 1.4.
+  static final TextStyle ctaTitle24 = _base.copyWith(
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.4,
+  );
+
+  /// CTA 화면 서브타이틀 — Regular 14, secondary, line-height 1.4.
+  static final TextStyle ctaSubtitle14 = _base.copyWith(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.4,
+    color: AppColors.textSecondary,
+  );
+
   // ── Body / meta ───────────────────────────────────────────────
   /// 배너 서브텍스트 — Regular 12, muted.
   static final TextStyle bannerSubtitle = _base.copyWith(

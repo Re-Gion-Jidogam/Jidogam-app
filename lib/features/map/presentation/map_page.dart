@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/circle_back_button.dart';
 import '../../../core/widgets/resizable_bottom_sheet.dart';
+import '../../profile/data/user_profile_repository.dart';
 import '../../shell/providers/nav_provider.dart';
 import '../data/map_repository.dart';
 import '../map_view.dart';
@@ -14,6 +15,7 @@ import '../providers/map_providers.dart';
 import 'widgets/current_location_button.dart';
 import 'widgets/map_search_field.dart';
 import 'widgets/map_segmented_control.dart';
+import 'widgets/place_detail_card.dart';
 import 'widgets/place_list_card.dart';
 import 'widgets/stamp_card.dart';
 
@@ -39,6 +41,16 @@ class _MapPageState extends ConsumerState<MapPage> {
     super.dispose();
   }
 
+  /// 카드 하나를 펼치거나 접는다 — 다른 카드가 펼쳐져 있어도 건드리지 않는다.
+  void _togglePlace(Place place) {
+    final StateController<Set<Place>> notifier =
+        ref.read(selectedPlacesProvider.notifier);
+    final Set<Place> current = notifier.state;
+    notifier.state = current.contains(place)
+        ? (<Place>{...current}..remove(place))
+        : <Place>{...current, place};
+  }
+
   String _searchHint(MapSegment segment) => switch (segment) {
         MapSegment.myStamp => '내가 찍은 도장 검색하기',
         MapSegment.place => '어디로 가볼까요?',
@@ -50,7 +62,18 @@ class _MapPageState extends ConsumerState<MapPage> {
     final MapSegment segment = ref.watch(mapSegmentProvider);
     final List<Stamp> stamps = ref.watch(myStampsProvider);
     final List<Place> places = ref.watch(recommendedPlacesProvider);
+    final Set<Place> selectedPlaces = ref.watch(selectedPlacesProvider);
+    final int? cooldownRemainingMinutes =
+        stampCooldownRemainingMinutes(ref.watch(lastStampedAtProvider));
     final double screenHeight = MediaQuery.of(context).size.height;
+
+    // 다른 세그먼트로 넘어가면 상세 선택을 초기화한다.
+    ref.listen<MapSegment>(mapSegmentProvider, (MapSegment? prev, MapSegment next) {
+      if (next != MapSegment.place &&
+          ref.read(selectedPlacesProvider).isNotEmpty) {
+        ref.read(selectedPlacesProvider.notifier).state = <Place>{};
+      }
+    });
 
     return Scaffold(
       body: Stack(
@@ -120,6 +143,9 @@ class _MapPageState extends ConsumerState<MapPage> {
                 stamps: stamps,
                 places: places,
                 searchHint: _searchHint(segment),
+                selectedPlaces: selectedPlaces,
+                cooldownRemainingMinutes: cooldownRemainingMinutes,
+                onTogglePlace: _togglePlace,
               ),
             ),
           ),
@@ -137,6 +163,9 @@ class _SheetContent extends StatelessWidget {
     required this.stamps,
     required this.places,
     required this.searchHint,
+    required this.selectedPlaces,
+    required this.cooldownRemainingMinutes,
+    required this.onTogglePlace,
   });
 
   final ScrollController scrollController;
@@ -144,6 +173,12 @@ class _SheetContent extends StatelessWidget {
   final List<Stamp> stamps;
   final List<Place> places;
   final String searchHint;
+  final Set<Place> selectedPlaces;
+
+  /// 도장찍기 쿨다운 잔여 시간(분) — 쿨다운 중이 아니면 null.
+  /// "장소" 탭 헤더 바로 아래 안내 문구를 띄우는 데 쓴다.
+  final int? cooldownRemainingMinutes;
+  final ValueChanged<Place> onTogglePlace;
 
   @override
   Widget build(BuildContext context) {
@@ -181,11 +216,88 @@ class _SheetContent extends StatelessWidget {
 
   List<Widget> _place() {
     return <Widget>[
-      Text('여기는 어때요?', style: AppTextStyles.title18),
+      // Figma(`Frame 2610735`)에서 헤더는 카드 로우 기준 x=8에서 시작한다
+      // (카드 안쪽 텍스트의 x=18과는 다른 값 — 서로 맞출 필요 없음).
+      Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('여기는 어때요?', style: AppTextStyles.title18),
+            // 최근(쿨다운 이내)에 도장을 찍었으면, 목록 전체가 아직 못 찍는
+            // 상태임을 헤더 바로 아래에서 미리 알려준다(Figma `/map/place`
+            // 검색결과 헤더 문구와 동일한 스타일).
+            if (cooldownRemainingMinutes != null) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                '$cooldownRemainingMinutes분 뒤에 도장을 찍을 수 있어요',
+                style:
+                    AppTextStyles.helper.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
+          ],
+        ),
+      ),
       const SizedBox(height: 12),
       for (int i = 0; i < places.length; i++) ...<Widget>[
         if (i > 0) const SizedBox(height: 12),
-        PlaceListCard(places[i]),
+        // 다른 페이지로 이동하지 않고, 탭한 카드가 그 자리에서 커지며 상세를
+        // 보여준다 — 나머지 카드는 그대로 리스트에 남는다(다른 카드를 펼쳐도
+        // 이미 펼친 카드가 자동으로 접히지 않는다).
+        // AnimatedCrossFade는 두 자식을 선택 상태와 무관하게 항상 같이
+        // 빌드해두고 Offstage로만 감추므로("다른 카드는 목록으로만 남는다"는
+        // 전제와 어긋남), 선택된 쪽 위젯 하나만 실제로 빌드되도록
+        // AnimatedSize(크기)+AnimatedSwitcher(페이드)를 같은 지속시간·커브로
+        // 맞춰서 쓴다. 접힐 때 굼떠 보이지 않도록 짧게 잡는다.
+        AnimatedSize(
+          key: ValueKey<String>('card-${places[i].name}'),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
+          alignment: Alignment.topCenter,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeIn,
+            switchOutCurve: Curves.easeOut,
+            transitionBuilder: (Widget child, Animation<double> animation) =>
+                FadeTransition(opacity: animation, child: child),
+            // 기본 layoutBuilder는 사라지는 카드도 포지션 없이 그대로 쌓아서,
+            // 그 카드가 더 크면(상세→목록으로 접힐 때) Stack이 사라질 때까지
+            // 큰 크기를 유지하다 마지막 순간에 확 줄어든다 — 이게 바깥
+            // AnimatedSize와 타이밍이 어긋나 깜빡이듯 보이는 원인이다. 사라지는
+            // 카드를 Positioned.fill로 흐름에서 빼서 크기가 항상 "다음에 보여줄
+            // 카드" 기준으로만 잡히게 한다.
+            layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+              return Stack(
+                alignment: Alignment.topCenter,
+                children: <Widget>[
+                  // top/left/right만 고정하고 bottom은 비워, 사라지는 카드가
+                  // Stack 높이에 맞춰 억지로 눌리지 않고 원래 높이 그대로
+                  // 자연스럽게 겹쳐 있다가 페이드아웃되게 한다.
+                  for (final Widget child in previousChildren)
+                    Positioned(top: 0, left: 0, right: 0, child: child),
+                  ?currentChild,
+                ],
+              );
+            },
+            child: selectedPlaces.contains(places[i])
+                ? PlaceDetailCard(
+                    places[i],
+                    key: ValueKey<String>('detail-${places[i].name}'),
+                    onCollapse: () => onTogglePlace(places[i]),
+                    // 실제 동작은 아직 없지만, 다른 미구현 버튼들(예:
+                    // CurrentLocationButton)과 같은 컨벤션으로 퍼블리싱
+                    // 단계에선 눌리는 것처럼 보이게 빈 콜백을 둔다.
+                    onGuidebookTap: () {},
+                    onAddToGuidebook: () {},
+                    onStamp: () {},
+                  )
+                : PlaceListCard(
+                    places[i],
+                    key: ValueKey<String>('list-${places[i].name}'),
+                    onTap: () => onTogglePlace(places[i]),
+                  ),
+          ),
+        ),
       ],
     ];
   }
