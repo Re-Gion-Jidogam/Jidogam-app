@@ -6,21 +6,27 @@ import '../theme/app_text_styles.dart';
 /// 초록 CTA 버튼 (높이 45, 라운드 12).
 ///
 /// [onPressed]가 null이거나 [isLoading]이면 비활성(연한 초록) 상태.
+/// [subtitle]을 주면(비활성일 때만 노출) 회색 배경 + 라벨 아래 사유 텍스트로
+/// 바뀐다 — "폼이 아직 안 채워짐" 같은 일반 비활성과 달리 "너무 멀리있는
+/// 장소예요"처럼 이유를 설명해야 하는 상태용.
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
     required this.label,
     this.onPressed,
     this.isLoading = false,
+    this.subtitle,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     final bool enabled = onPressed != null && !isLoading;
+    final bool hasReason = !enabled && subtitle != null;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: enabled ? onPressed : null,
@@ -31,7 +37,9 @@ class PrimaryButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: enabled
               ? AppColors.primary300
-              : AppColors.primary300.withValues(alpha: 0.4),
+              : hasReason
+                  ? AppColors.gray300
+                  : AppColors.primary300.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         ),
@@ -44,7 +52,24 @@ class PrimaryButton extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : Text(label, style: AppTextStyles.button),
+            : hasReason
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        label,
+                        style: AppTextStyles.button
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                      Text(
+                        subtitle!,
+                        style: AppTextStyles.cardMetaRegular
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  )
+                : Text(label, style: AppTextStyles.button),
       ),
     );
   }

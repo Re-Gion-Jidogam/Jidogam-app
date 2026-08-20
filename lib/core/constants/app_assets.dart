@@ -25,4 +25,5 @@ abstract final class AppImages {
   static const String place2 = '$_base/place_2.png';
   static const String place3 = '$_base/place_3.png';
   static const String mapPlaceholder = '$_base/map_placeholder.png';
+  static const String travelStamp = '$_base/travel_stamp.png';
 }
