@@ -19,7 +19,10 @@ final userProfileRepositoryProvider = Provider<UserProfileRepository>(
   (ref) => const UserProfileRepository(),
 );
 
-final lastStampedAtProvider = Provider<DateTime?>(
+/// 마지막 도장 시각 — 초기값은 프로필 API 목이지만, 실제로 도장을 찍으면
+/// [StateProvider]라 그 자리에서 `now`로 갱신할 수 있다(쿨다운 안내 문구가
+/// 바로 반영되도록).
+final lastStampedAtProvider = StateProvider<DateTime?>(
   (ref) => ref.watch(userProfileRepositoryProvider).lastStampedAt(),
 );
 

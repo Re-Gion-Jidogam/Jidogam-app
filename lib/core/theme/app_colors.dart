@@ -18,6 +18,7 @@ abstract final class AppColors {
   static const Color primary400 = Color(0xFF7EA310);
 
   static const Color red200 = Color(0xFFF03E31);
+  static const Color red300 = Color(0xFFDC1D10);
   static const Color red400 = Color(0xFFBF1004);
 
   // ── Semantic aliases ──────────────────────────────────────────

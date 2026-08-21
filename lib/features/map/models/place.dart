@@ -65,4 +65,34 @@ class Place {
 
   /// 상세 카드용 장소 사진 에셋 경로 목록(앞 3장 노출) — 서버 응답에 없는 프론트 전용 목 데이터.
   final List<String> photos;
+
+  /// [visitedDate]만 바꾼 사본 — 도장찍기/도장 지우기 직후 목록을 낙관적으로
+  /// 갱신할 때 쓴다([id]가 같은 장소를 [==]가 같은 값으로 취급하므로, 이
+  /// 사본으로 교체해도 [selectedPlacesProvider] 등 기존 Set 선택 상태가
+  /// 깨지지 않는다).
+  Place withVisitedDate(DateTime? visitedDate) => Place(
+        id: id,
+        name: name,
+        categoryCode: categoryCode,
+        categoryName: categoryName,
+        jibunAddress: jibunAddress,
+        roadAddress: roadAddress,
+        latitude: latitude,
+        longitude: longitude,
+        distanceInKm: distanceInKm,
+        exp: exp,
+        visitedDate: visitedDate,
+        guidebookCount: guidebookCount,
+        stampCount: stampCount,
+        rating: rating,
+        photos: photos,
+      );
+
+  /// 서버의 [id](`pid`) 기준 동일성 — 같은 장소면 도장 상태가 바뀌어 다른
+  /// 인스턴스가 되어도 같은 장소로 취급한다.
+  @override
+  bool operator ==(Object other) => other is Place && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
