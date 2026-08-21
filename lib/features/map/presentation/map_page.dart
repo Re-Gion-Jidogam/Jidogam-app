@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/circle_back_button.dart';
 import '../../../core/widgets/resizable_bottom_sheet.dart';
+import '../../../core/widgets/success_toast.dart';
 import '../../profile/data/user_profile_repository.dart';
 import '../../shell/providers/nav_provider.dart';
 import '../data/map_repository.dart';
@@ -18,6 +19,7 @@ import 'widgets/map_segmented_control.dart';
 import 'widgets/place_detail_card.dart';
 import 'widgets/place_list_card.dart';
 import 'widgets/stamp_card.dart';
+import 'widgets/stamp_dialogs.dart';
 
 /// 지도 탭 — 지도 + 상단 세그먼트 + 리사이즈 바텀시트(내 도장).
 class MapPage extends ConsumerStatefulWidget {
@@ -51,6 +53,38 @@ class _MapPageState extends ConsumerState<MapPage> {
         : <Place>{...current, place};
   }
 
+  /// "도장찍기" 확인 → 확정 시 방문일 기록 + 쿨다운 갱신 + 성공 토스트.
+  Future<void> _handleStamp(Place place) async {
+    final bool confirmed =
+        await showStampConfirmDialog(context, placeName: place.name);
+    if (!confirmed) return;
+
+    final DateTime now = DateTime.now();
+    ref.read(placeStampOverridesProvider.notifier).update(
+          (Map<String, DateTime?> overrides) =>
+              <String, DateTime?>{...overrides, place.id: now},
+        );
+    ref.read(lastStampedAtProvider.notifier).state = now;
+
+    if (!mounted) return;
+    showSuccessToast(context, emphasis: place.name, suffix: '에 도장을 찍었어요');
+  }
+
+  /// "도장 지우기" 확인 → 확정 시 방문일 제거 + 성공 토스트.
+  Future<void> _handleRemoveStamp(Place place) async {
+    final bool confirmed =
+        await showStampRemoveDialog(context, placeName: place.name);
+    if (!confirmed) return;
+
+    ref.read(placeStampOverridesProvider.notifier).update(
+          (Map<String, DateTime?> overrides) =>
+              <String, DateTime?>{...overrides, place.id: null},
+        );
+
+    if (!mounted) return;
+    showSuccessToast(context, emphasis: place.name, suffix: ' 도장을 지웠어요');
+  }
+
   String _searchHint(MapSegment segment) => switch (segment) {
         MapSegment.myStamp => '내가 찍은 도장 검색하기',
         MapSegment.place => '어디로 가볼까요?',
@@ -61,7 +95,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   Widget build(BuildContext context) {
     final MapSegment segment = ref.watch(mapSegmentProvider);
     final List<Stamp> stamps = ref.watch(myStampsProvider);
-    final List<Place> places = ref.watch(recommendedPlacesProvider);
+    final List<Place> places = ref.watch(effectivePlacesProvider);
     final Set<Place> selectedPlaces = ref.watch(selectedPlacesProvider);
     final int? cooldownRemainingMinutes =
         stampCooldownRemainingMinutes(ref.watch(lastStampedAtProvider));
@@ -146,6 +180,8 @@ class _MapPageState extends ConsumerState<MapPage> {
                 selectedPlaces: selectedPlaces,
                 cooldownRemainingMinutes: cooldownRemainingMinutes,
                 onTogglePlace: _togglePlace,
+                onStamp: _handleStamp,
+                onRemoveStamp: _handleRemoveStamp,
               ),
             ),
           ),
@@ -166,6 +202,8 @@ class _SheetContent extends StatelessWidget {
     required this.selectedPlaces,
     required this.cooldownRemainingMinutes,
     required this.onTogglePlace,
+    required this.onStamp,
+    required this.onRemoveStamp,
   });
 
   final ScrollController scrollController;
@@ -179,6 +217,8 @@ class _SheetContent extends StatelessWidget {
   /// "장소" 탭 헤더 바로 아래 안내 문구를 띄우는 데 쓴다.
   final int? cooldownRemainingMinutes;
   final ValueChanged<Place> onTogglePlace;
+  final ValueChanged<Place> onStamp;
+  final ValueChanged<Place> onRemoveStamp;
 
   @override
   Widget build(BuildContext context) {
@@ -284,12 +324,14 @@ class _SheetContent extends StatelessWidget {
                     places[i],
                     key: ValueKey<String>('detail-${places[i].name}'),
                     onCollapse: () => onTogglePlace(places[i]),
-                    // 실제 동작은 아직 없지만, 다른 미구현 버튼들(예:
-                    // CurrentLocationButton)과 같은 컨벤션으로 퍼블리싱
-                    // 단계에선 눌리는 것처럼 보이게 빈 콜백을 둔다.
+                    // 가이드북 추가는 아직 실제 동작이 없지만, 다른
+                    // 미구현 버튼들(예: CurrentLocationButton)과 같은
+                    // 컨벤션으로 퍼블리싱 단계에선 눌리는 것처럼 보이게
+                    // 빈 콜백을 둔다.
                     onGuidebookTap: () {},
                     onAddToGuidebook: () {},
-                    onStamp: () {},
+                    onStamp: () => onStamp(places[i]),
+                    onRemoveStamp: () => onRemoveStamp(places[i]),
                   )
                 : PlaceListCard(
                     places[i],

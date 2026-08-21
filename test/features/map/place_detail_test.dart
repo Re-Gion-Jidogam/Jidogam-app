@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -48,6 +49,29 @@ void main() {
 
     expect(find.byType(PlaceDetailCard), findsNothing);
     expect(find.byType(PlaceListCard), findsNWidgets(totalPlaces));
+  });
+
+  testWidgets('상세 카드의 빈 여백을 탭해도 목록 카드로 접힌다', (WidgetTester tester) async {
+    await tester.pumpWidget(const ProviderScope(child: JidogamApp()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('지도'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('장소'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(PlaceListCard).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(PlaceDetailCard), findsOneWidget);
+
+    // 카드 좌상단 여백(16px 패딩 안쪽) — 어떤 텍스트·버튼도 없는 순수 여백을
+    // 탭해도 접혀야 한다([PlaceListCard]가 카드 전체를 눌러 펼치는 것과
+    // 대칭). 헤더 텍스트만 짚었던 위 테스트와 달리 여백 자체를 짚는다.
+    // (카드 중앙은 테스트 창 높이 밖으로 스크롤돼 있을 수 있어 좌상단을 쓴다.)
+    final Rect cardRect = tester.getRect(find.byType(PlaceDetailCard));
+    await tester.tapAt(cardRect.topLeft + const Offset(8, 8));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PlaceDetailCard), findsNothing);
   });
 
   testWidgets('비로그인 상태에서 "나도 도장찍기"를 탭하면 CTA 화면으로 이동한다',
@@ -103,7 +127,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
-          lastStampedAtProvider.overrideWithValue(DateTime.now()),
+          lastStampedAtProvider.overrideWith((ref) => DateTime.now()),
         ],
         child: const JidogamApp(),
       ),
