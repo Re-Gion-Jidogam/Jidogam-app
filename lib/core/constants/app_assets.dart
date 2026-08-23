@@ -9,6 +9,7 @@ abstract final class AppIcons {
   static const String bnbStamp = '$_base/bnb_stamp.svg';
   static const String bnbProfile = '$_base/bnb_profile.svg';
   static const String search = '$_base/search.svg';
+  static const String filterPrivate = '$_base/filter_private.svg';
 }
 
 abstract final class AppLottie {
@@ -26,4 +27,6 @@ abstract final class AppImages {
   static const String place3 = '$_base/place_3.png';
   static const String mapPlaceholder = '$_base/map_placeholder.png';
   static const String travelStamp = '$_base/travel_stamp.png';
+  static const String guidebookPromoPopular = '$_base/guidebook_promo_popular.png';
+  static const String guidebookPromoWaiting = '$_base/guidebook_promo_waiting.png';
 }

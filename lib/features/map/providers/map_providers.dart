@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/application/session.dart';
+import '../../home/models/guidebook.dart';
 import '../data/map_repository.dart';
 import '../models/place.dart';
 
@@ -40,5 +42,21 @@ final effectivePlacesProvider = Provider<List<Place>>((ref) {
       overrides.containsKey(place.id)
           ? place.withVisitedDate(overrides[place.id])
           : place,
+  ];
+});
+
+/// [rawChallengingGuidebooksProvider] 위에 로그인 세션 닉네임을 얹은
+/// 실사용 리스트 — "도전중인 가이드북" 카드 속 "지나가던 사람"은 더미
+/// 데이터의 고정 이름이 아니라 실제로는 로그인한 유저 자신이다. 이 목록
+/// 자체가 로그인 상태에서만 화면에 노출되므로("도전중인 가이드북" 섹션은
+/// 비로그인이면 아예 안 뜬다) 닉네임이 없을 일은 없지만, 방어적으로
+/// 더미 이름을 그대로 둔다.
+final challengingGuidebooksProvider = Provider<List<Guidebook>>((ref) {
+  final String? nickname = ref.watch(sessionProvider)?.nickname;
+  final List<Guidebook> guidebooks = ref.watch(rawChallengingGuidebooksProvider);
+  if (nickname == null) return guidebooks;
+  return <Guidebook>[
+    for (final Guidebook guidebook in guidebooks)
+      guidebook.withAuthorName(nickname),
   ];
 });

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/circle_back_button.dart';
 import '../../../core/widgets/resizable_bottom_sheet.dart';
 import '../../../core/widgets/success_toast.dart';
+import '../../auth/application/session.dart';
+import '../../home/models/guidebook.dart';
+import '../../home/widgets/guidebook_card.dart';
 import '../../profile/data/user_profile_repository.dart';
 import '../../shell/providers/nav_provider.dart';
 import '../data/map_repository.dart';
@@ -14,6 +19,8 @@ import '../models/place.dart';
 import '../models/stamp.dart';
 import '../providers/map_providers.dart';
 import 'widgets/current_location_button.dart';
+import 'widgets/guidebook_filter_chip.dart';
+import 'widgets/guidebook_promo_card.dart';
 import 'widgets/map_search_field.dart';
 import 'widgets/map_segmented_control.dart';
 import 'widgets/place_detail_card.dart';
@@ -88,7 +95,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   String _searchHint(MapSegment segment) => switch (segment) {
         MapSegment.myStamp => '내가 찍은 도장 검색하기',
         MapSegment.place => '어디로 가볼까요?',
-        MapSegment.guidebook => '내 가이드북 검색',
+        MapSegment.guidebook => '멋진 가이드북을 검색해보세요',
       };
 
   @override
@@ -96,6 +103,13 @@ class _MapPageState extends ConsumerState<MapPage> {
     final MapSegment segment = ref.watch(mapSegmentProvider);
     final List<Stamp> stamps = ref.watch(myStampsProvider);
     final List<Place> places = ref.watch(effectivePlacesProvider);
+    final AppSession? session = ref.watch(sessionProvider);
+    final bool isLoggedIn = session != null;
+    final List<Guidebook> guidebooks = ref.watch(challengingGuidebooksProvider);
+    // "지나가던사람님을 기다리는 곳" 프로모 카드 문구 — 로그인 상태면 실제
+    // 닉네임, 아니면 홈 탭 "당신을 기다리는 곳"과 같은 2인칭 표현으로.
+    final String waitingForYouLabel =
+        isLoggedIn ? '${session.nickname}님을\n기다리는 곳' : '당신을\n기다리는 곳';
     final Set<Place> selectedPlaces = ref.watch(selectedPlacesProvider);
     final int? cooldownRemainingMinutes =
         stampCooldownRemainingMinutes(ref.watch(lastStampedAtProvider));
@@ -176,6 +190,9 @@ class _MapPageState extends ConsumerState<MapPage> {
                 segment: segment,
                 stamps: stamps,
                 places: places,
+                guidebooks: guidebooks,
+                isLoggedIn: isLoggedIn,
+                waitingForYouLabel: waitingForYouLabel,
                 searchHint: _searchHint(segment),
                 selectedPlaces: selectedPlaces,
                 cooldownRemainingMinutes: cooldownRemainingMinutes,
@@ -198,6 +215,9 @@ class _SheetContent extends StatelessWidget {
     required this.segment,
     required this.stamps,
     required this.places,
+    required this.guidebooks,
+    required this.isLoggedIn,
+    required this.waitingForYouLabel,
     required this.searchHint,
     required this.selectedPlaces,
     required this.cooldownRemainingMinutes,
@@ -210,6 +230,15 @@ class _SheetContent extends StatelessWidget {
   final MapSegment segment;
   final List<Stamp> stamps;
   final List<Place> places;
+
+  /// "도전중인 가이드북" — 로그인 상태에서만 뜬다(내가 참여 중인 가이드북이라
+  /// 비로그인이면 보여줄 게 없다).
+  final List<Guidebook> guidebooks;
+  final bool isLoggedIn;
+
+  /// "___님을 기다리는 곳" 프로모 카드 문구 — 로그인 상태면 실제 닉네임,
+  /// 아니면 "당신을 기다리는 곳"(홈 탭과 같은 2인칭 표현).
+  final String waitingForYouLabel;
   final String searchHint;
   final Set<Place> selectedPlaces;
 
@@ -237,7 +266,10 @@ class _SheetContent extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: _place(),
             ),
-          MapSegment.guidebook => _comingSoon(segment),
+          MapSegment.guidebook => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _guidebook(),
+            ),
         },
       ],
     );
@@ -344,15 +376,60 @@ class _SheetContent extends StatelessWidget {
     ];
   }
 
-  Widget _comingSoon(MapSegment segment) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 80),
-      child: Center(
-        child: Text(
-          '${segment.label} 준비 중이에요',
-          style: AppTextStyles.title18.copyWith(color: AppColors.textMuted),
-        ),
+  List<Widget> _guidebook() {
+    return <Widget>[
+      Row(
+        children: <Widget>[
+          const GuidebookPromoCard(
+            label: '인기 가이드북',
+            backgroundAsset: AppImages.guidebookPromoPopular,
+          ),
+          const SizedBox(width: 12),
+          GuidebookPromoCard(
+            label: waitingForYouLabel,
+            backgroundAsset: AppImages.guidebookPromoWaiting,
+          ),
+        ],
       ),
-    );
+      // "도전중인 가이드북" = 내가 참여 중인 가이드북이라 비로그인이면
+      // 보여줄 게 없다 — 섹션째로 숨긴다.
+      if (isLoggedIn) ...<Widget>[
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Text('도전중인 가이드북', style: AppTextStyles.title18),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: <Widget>[
+            GuidebookFilterChip(
+              icon: const Icon(Icons.check, size: 14, color: AppColors.gray900),
+              label: '출판됨',
+              onTap: () {},
+            ),
+            const SizedBox(width: 8),
+            GuidebookFilterChip(
+              icon: AppSvg(
+                AppIcons.filterPrivate,
+                size: 14,
+                color: AppColors.gray900,
+              ),
+              label: '비공개',
+              onTap: () {},
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        for (int i = 0; i < guidebooks.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(height: 12),
+          GuidebookCard(
+            guidebooks[i],
+            width: double.infinity,
+            height: 196,
+            onTap: () {},
+          ),
+        ],
+      ],
+    ];
   }
 }

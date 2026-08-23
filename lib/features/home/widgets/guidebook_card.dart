@@ -9,28 +9,37 @@ import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/chevron_right.dart';
 import '../models/guidebook.dart';
 
-/// 가이드북 대형 카드 (240×278).
+/// 가이드북 대형 카드. 기본 240×278(홈 "당신을 기다리는 곳"/"인기 가이드북"
+/// 가로 스크롤 카드) — [width]/[height]를 주면 지도 "가이드북" 탭의
+/// 전체너비 196px 카드처럼 다른 크기로도 쓸 수 있다.
 ///
-/// 배경(이모지 패턴 / 사진) 위에 상단 평점 배지와 하단 그라데이션 정보
-/// 오버레이를 얹는다.
+/// 배경(이모지 패턴 / 사진) 위에 상단 배지(평점, 또는 [Guidebook.progress]가
+/// 있으면 진행률)와 하단 그라데이션 정보 오버레이를 얹는다.
 class GuidebookCard extends StatelessWidget {
-  const GuidebookCard(this.guidebook, {super.key, this.onTap});
+  const GuidebookCard(
+    this.guidebook, {
+    super.key,
+    this.onTap,
+    this.width = 240,
+    this.height = 278,
+  });
 
   final Guidebook guidebook;
   final VoidCallback? onTap;
+  final double width;
+  final double height;
 
-  static const double _width = 240;
-  static const double _height = 278;
   static const double _radius = 20;
 
   @override
   Widget build(BuildContext context) {
+    final GuidebookProgress? progress = guidebook.progress;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        width: _width,
-        height: _height,
+        width: width,
+        height: height,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(_radius),
@@ -45,7 +54,9 @@ class GuidebookCard extends StatelessWidget {
               children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-                  child: _RatingBadge(guidebook.rating),
+                  child: progress == null
+                      ? _RatingBadge(guidebook.rating)
+                      : _ProgressBadge(progress),
                 ),
                 const Spacer(),
                 _CardBackDetail(guidebook),
@@ -168,6 +179,84 @@ class _RatingBadge extends StatelessWidget {
               AppSvg(AppIcons.star, size: 10, color: AppColors.gray900),
               const SizedBox(width: 2),
               Text(_formatRating(rating), style: AppTextStyles.ratingBadge),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 상단 진행률 배지 — 진행률만큼 흰 부분이 실제로 채워지는 진행 바(Figma
+/// `card-star` progress 변형). [guidebook.progress]가 있는 카드(도전 중)에서
+/// [_RatingBadge] 대신 뜬다. 흰 채움 위엔 "N% 완료", 안 채워진 반투명 트랙
+/// 위엔 "완료수 / 전체수"가 겹쳐진다.
+class _ProgressBadge extends StatelessWidget {
+  const _ProgressBadge(this.progress);
+
+  final GuidebookProgress progress;
+
+  static const double _height = 26;
+
+  @override
+  Widget build(BuildContext context) {
+    final double fraction = progress.total == 0
+        ? 0
+        : (progress.completed / progress.total).clamp(0.0, 1.0);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(100),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+        child: Container(
+          height: _height,
+          decoration: BoxDecoration(
+            color: const Color(0x66FFFFFF),
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: const Color(0x66FFFFFF)),
+            boxShadow: const <BoxShadow>[
+              BoxShadow(
+                color: Color(0x1A000000),
+                offset: Offset(0, 4),
+                blurRadius: 14,
+              ),
+            ],
+          ),
+          child: Stack(
+            // 기본 정렬(topStart)이면 텍스트 Row가 자기 높이만큼만 차지해
+            // 26px 트랙 위쪽에 붙는다 — 세로로 가운데 오도록 center로 맞춘다.
+            alignment: Alignment.center,
+            children: <Widget>[
+              // 진행률만큼만 채워지는 흰 배경 — 트랙 전체 너비에 비례.
+              Positioned.fill(
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: fraction,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: AppColors.commonShadow,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      '${progress.percent}% 완료',
+                      style: AppTextStyles.ratingBadge,
+                    ),
+                    Text(
+                      '${_formatThousands(progress.completed)} / ${_formatThousands(progress.total)}',
+                      style: AppTextStyles.cardMetaRegular
+                          .copyWith(color: AppColors.gray900, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

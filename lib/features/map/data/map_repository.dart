@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_assets.dart';
+import '../../home/models/guidebook.dart';
 import '../models/place.dart';
 import '../models/stamp.dart';
 
@@ -191,6 +193,57 @@ class MapRepository {
       ),
     ];
   }
+
+  /// "가이드북" 탭 "도전중인 가이드북" — 내가 참여 중인, 즉 아직 완료 전인
+  /// 가이드북들이라 전부 별점 배지 대신 진행률 배지를 보여준다.
+  List<Guidebook> challengingGuidebooks() {
+    return const <Guidebook>[
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
+        progress: GuidebookProgress(completed: 193, total: 483),
+      ),
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: ImageBackground(AppImages.guidebook1),
+        progress: GuidebookProgress(completed: 1827, total: 2343),
+      ),
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: ImageBackground(AppImages.guidebook2),
+        progress: GuidebookProgress(completed: 72, total: 483),
+      ),
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
+        progress: GuidebookProgress(completed: 447, total: 483),
+      ),
+    ];
+  }
 }
 
 final mapRepositoryProvider = Provider<MapRepository>(
@@ -203,4 +256,11 @@ final myStampsProvider = Provider<List<Stamp>>(
 
 final recommendedPlacesProvider = Provider<List<Place>>(
   (ref) => ref.watch(mapRepositoryProvider).recommendedPlaces(),
+);
+
+/// 더미(레포지토리 원본) "도전중인 가이드북" 목록. 카드 속 "지나가던 사람"은
+/// 실제로는 로그인한 유저 자신이라, 화면은 이 provider가 아니라 세션
+/// 닉네임을 덮어쓴 [challengingGuidebooksProvider](map_providers.dart)를 본다.
+final rawChallengingGuidebooksProvider = Provider<List<Guidebook>>(
+  (ref) => ref.watch(mapRepositoryProvider).challengingGuidebooks(),
 );
