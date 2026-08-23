@@ -9,6 +9,7 @@ import '../../../core/widgets/circle_back_button.dart';
 import '../../../core/widgets/resizable_bottom_sheet.dart';
 import '../../../core/widgets/success_toast.dart';
 import '../../auth/application/session.dart';
+import '../../home/data/home_repository.dart';
 import '../../home/models/guidebook.dart';
 import '../../home/widgets/guidebook_card.dart';
 import '../../profile/data/user_profile_repository.dart';
@@ -18,6 +19,7 @@ import '../map_view.dart';
 import '../models/place.dart';
 import '../models/stamp.dart';
 import '../providers/map_providers.dart';
+import 'guidebook_browse_page.dart';
 import 'widgets/current_location_button.dart';
 import 'widgets/guidebook_filter_chip.dart';
 import 'widgets/guidebook_promo_card.dart';
@@ -98,6 +100,27 @@ class _MapPageState extends ConsumerState<MapPage> {
         MapSegment.guidebook => '멋진 가이드북을 검색해보세요',
       };
 
+  /// [GuidebookBrowsePage]를 연다 — "이 장소가 포함된 가이드북", "인기
+  /// 가이드북", "OOO님을 기다리는 곳", "가이드북 검색" 네 진입점이 모두
+  /// 이 메서드 하나로 모인다.
+  void _openGuidebookBrowse({
+    required String title,
+    required List<Guidebook> guidebooks,
+    required String resultCountLabel,
+    String? searchHint,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GuidebookBrowsePage(
+          title: title,
+          guidebooks: guidebooks,
+          resultCountLabel: resultCountLabel,
+          searchHint: searchHint,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final MapSegment segment = ref.watch(mapSegmentProvider);
@@ -107,9 +130,16 @@ class _MapPageState extends ConsumerState<MapPage> {
     final bool isLoggedIn = session != null;
     final List<Guidebook> guidebooks = ref.watch(challengingGuidebooksProvider);
     // "지나가던사람님을 기다리는 곳" 프로모 카드 문구 — 로그인 상태면 실제
-    // 닉네임, 아니면 홈 탭 "당신을 기다리는 곳"과 같은 2인칭 표현으로.
-    final String waitingForYouLabel =
-        isLoggedIn ? '${session.nickname}님을\n기다리는 곳' : '당신을\n기다리는 곳';
+    // 닉네임+"님", 아니면 홈 탭 "당신을 기다리는 곳"과 같은 2인칭 표현으로.
+    // 프로모 카드(2줄)와 브라우징 화면 타이틀(1줄)이 줄바꿈 여부만 다르다.
+    final String waitingForYouName = isLoggedIn ? '${session.nickname}님' : '당신';
+    final String waitingForYouLabel = '$waitingForYouName을\n기다리는 곳';
+    final String waitingForYouTitle = '$waitingForYouName을 기다리는 곳';
+    final List<Guidebook> popularGuidebooks = ref.watch(popularGuidebooksProvider);
+    final List<Guidebook> waitingForYouGuidebooks =
+        ref.watch(waitingForYouProvider);
+    final List<Guidebook> browsableGuidebooks =
+        ref.watch(browsableGuidebooksProvider);
     final Set<Place> selectedPlaces = ref.watch(selectedPlacesProvider);
     final int? cooldownRemainingMinutes =
         stampCooldownRemainingMinutes(ref.watch(lastStampedAtProvider));
@@ -191,14 +221,19 @@ class _MapPageState extends ConsumerState<MapPage> {
                 stamps: stamps,
                 places: places,
                 guidebooks: guidebooks,
+                popularGuidebooks: popularGuidebooks,
+                waitingForYouGuidebooks: waitingForYouGuidebooks,
+                browsableGuidebooks: browsableGuidebooks,
                 isLoggedIn: isLoggedIn,
                 waitingForYouLabel: waitingForYouLabel,
+                waitingForYouTitle: waitingForYouTitle,
                 searchHint: _searchHint(segment),
                 selectedPlaces: selectedPlaces,
                 cooldownRemainingMinutes: cooldownRemainingMinutes,
                 onTogglePlace: _togglePlace,
                 onStamp: _handleStamp,
                 onRemoveStamp: _handleRemoveStamp,
+                onOpenGuidebookBrowse: _openGuidebookBrowse,
               ),
             ),
           ),
@@ -216,14 +251,19 @@ class _SheetContent extends StatelessWidget {
     required this.stamps,
     required this.places,
     required this.guidebooks,
+    required this.popularGuidebooks,
+    required this.waitingForYouGuidebooks,
+    required this.browsableGuidebooks,
     required this.isLoggedIn,
     required this.waitingForYouLabel,
+    required this.waitingForYouTitle,
     required this.searchHint,
     required this.selectedPlaces,
     required this.cooldownRemainingMinutes,
     required this.onTogglePlace,
     required this.onStamp,
     required this.onRemoveStamp,
+    required this.onOpenGuidebookBrowse,
   });
 
   final ScrollController scrollController;
@@ -234,11 +274,22 @@ class _SheetContent extends StatelessWidget {
   /// "도전중인 가이드북" — 로그인 상태에서만 뜬다(내가 참여 중인 가이드북이라
   /// 비로그인이면 보여줄 게 없다).
   final List<Guidebook> guidebooks;
+
+  /// "인기 가이드북" / "___님을 기다리는 곳" 프로모 카드를 탭했을 때
+  /// [GuidebookBrowsePage]에 넘길 목록(각각 홈 탭과 같은 더미 데이터).
+  final List<Guidebook> popularGuidebooks;
+  final List<Guidebook> waitingForYouGuidebooks;
+
+  /// "이 장소가 포함된 가이드북"/"가이드북 검색" 진입점이 함께 쓰는 더미 목록.
+  final List<Guidebook> browsableGuidebooks;
   final bool isLoggedIn;
 
-  /// "___님을 기다리는 곳" 프로모 카드 문구 — 로그인 상태면 실제 닉네임,
-  /// 아니면 "당신을 기다리는 곳"(홈 탭과 같은 2인칭 표현).
+  /// "___님을 기다리는 곳" 프로모 카드 문구(2줄) — 로그인 상태면 실제
+  /// 닉네임+"님", 아니면 "당신"(홈 탭과 같은 2인칭 표현).
   final String waitingForYouLabel;
+
+  /// 위와 같은 문구의 브라우징 화면 타이틀용(1줄) 버전.
+  final String waitingForYouTitle;
   final String searchHint;
   final Set<Place> selectedPlaces;
 
@@ -249,13 +300,35 @@ class _SheetContent extends StatelessWidget {
   final ValueChanged<Place> onStamp;
   final ValueChanged<Place> onRemoveStamp;
 
+  /// [GuidebookBrowsePage]를 여는 콜백 — "이 장소가 포함된 가이드북", 프로모
+  /// 카드 2개, 가이드북 검색 진입점이 함께 쓴다.
+  final void Function({
+    required String title,
+    required List<Guidebook> guidebooks,
+    required String resultCountLabel,
+    String? searchHint,
+  }) onOpenGuidebookBrowse;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
       children: <Widget>[
-        MapSearchField(hint: searchHint),
+        MapSearchField(
+          hint: searchHint,
+          // "장소"/"내 도장" 탭 검색은 아직 실제 동작이 없지만("표시 전용"),
+          // "가이드북" 탭 검색만은 이미 검색 결과 화면(GuidebookBrowsePage)
+          // 이 있으니 탭하면 그 화면을 연다.
+          onTap: segment == MapSegment.guidebook
+              ? () => onOpenGuidebookBrowse(
+                    title: '가이드북 검색',
+                    guidebooks: browsableGuidebooks,
+                    resultCountLabel: '1,392개의 가이드북을 찾았어요',
+                    searchHint: searchHint,
+                  )
+              : null,
+        ),
         const SizedBox(height: 24),
         switch (segment) {
           MapSegment.myStamp => Column(
@@ -356,11 +429,16 @@ class _SheetContent extends StatelessWidget {
                     places[i],
                     key: ValueKey<String>('detail-${places[i].name}'),
                     onCollapse: () => onTogglePlace(places[i]),
+                    onGuidebookTap: () => onOpenGuidebookBrowse(
+                      title: '${places[i].name}이 포함된 가이드북',
+                      guidebooks: browsableGuidebooks,
+                      resultCountLabel:
+                          '${_formatCount(places[i].guidebookCount)}개의 가이드북을 찾았어요',
+                    ),
                     // 가이드북 추가는 아직 실제 동작이 없지만, 다른
                     // 미구현 버튼들(예: CurrentLocationButton)과 같은
                     // 컨벤션으로 퍼블리싱 단계에선 눌리는 것처럼 보이게
                     // 빈 콜백을 둔다.
-                    onGuidebookTap: () {},
                     onAddToGuidebook: () {},
                     onStamp: () => onStamp(places[i]),
                     onRemoveStamp: () => onRemoveStamp(places[i]),
@@ -380,14 +458,24 @@ class _SheetContent extends StatelessWidget {
     return <Widget>[
       Row(
         children: <Widget>[
-          const GuidebookPromoCard(
+          GuidebookPromoCard(
             label: '인기 가이드북',
             backgroundAsset: AppImages.guidebookPromoPopular,
+            onTap: () => onOpenGuidebookBrowse(
+              title: '인기 가이드북',
+              guidebooks: popularGuidebooks,
+              resultCountLabel: '1,392개의 가이드북',
+            ),
           ),
           const SizedBox(width: 12),
           GuidebookPromoCard(
             label: waitingForYouLabel,
             backgroundAsset: AppImages.guidebookPromoWaiting,
+            onTap: () => onOpenGuidebookBrowse(
+              title: waitingForYouTitle,
+              guidebooks: waitingForYouGuidebooks,
+              resultCountLabel: '1,392개의 가이드북',
+            ),
           ),
         ],
       ),
@@ -432,4 +520,15 @@ class _SheetContent extends StatelessWidget {
       ],
     ];
   }
+}
+
+/// [PlaceDetailCard]의 것과 같은 천 단위 콤마 포맷("4,928").
+String _formatCount(int n) {
+  final String s = n.toString();
+  final StringBuffer buf = StringBuffer();
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
 }

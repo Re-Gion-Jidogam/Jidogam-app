@@ -55,7 +55,7 @@ class GuidebookCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
                   child: progress == null
-                      ? _RatingBadge(guidebook.rating)
+                      ? RatingBadge(guidebook.rating)
                       : _ProgressBadge(progress),
                 ),
                 const Spacer(),
@@ -147,9 +147,10 @@ class _EmojiPattern extends StatelessWidget {
   }
 }
 
-/// 상단 평점 배지 — 반투명 흰 pill.
-class _RatingBadge extends StatelessWidget {
-  const _RatingBadge(this.rating);
+/// 상단 평점 배지 — 반투명 흰 pill. [GuidebookCard]와 가이드북 브라우징
+/// 화면(`GuidebookBrowsePage`)의 카드 뒷면이 함께 쓰는 공용 위젯이라 공개해뒀다.
+class RatingBadge extends StatelessWidget {
+  const RatingBadge(this.rating, {super.key});
 
   final double rating;
 
@@ -189,7 +190,7 @@ class _RatingBadge extends StatelessWidget {
 
 /// 상단 진행률 배지 — 진행률만큼 흰 부분이 실제로 채워지는 진행 바(Figma
 /// `card-star` progress 변형). [guidebook.progress]가 있는 카드(도전 중)에서
-/// [_RatingBadge] 대신 뜬다. 흰 채움 위엔 "N% 완료", 안 채워진 반투명 트랙
+/// [RatingBadge] 대신 뜬다. 흰 채움 위엔 "N% 완료", 안 채워진 반투명 트랙
 /// 위엔 "완료수 / 전체수"가 겹쳐진다.
 class _ProgressBadge extends StatelessWidget {
   const _ProgressBadge(this.progress);

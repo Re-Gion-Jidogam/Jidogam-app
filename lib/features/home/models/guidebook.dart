@@ -43,6 +43,7 @@ class Guidebook {
     required this.rewardPoint,
     required this.background,
     this.progress,
+    this.description,
   });
 
   final String title;
@@ -63,6 +64,11 @@ class Guidebook {
   /// 리스트에서 씀) — null이면 [GuidebookCard] 상단에 평소처럼 별점 배지가 뜬다.
   final GuidebookProgress? progress;
 
+  /// 가이드북 소개글 — 가이드북 브라우징 화면(`GuidebookBrowsePage`)의 카드
+  /// 뒷면에서만 쓴다. null이면 그 화면에서 일반적인 안내 문구로 대체한다
+  /// (이 필드가 없는 기존 더미 데이터를 전부 고칠 필요가 없도록).
+  final String? description;
+
   /// [authorName]만 바꾼 사본. "도전중인 가이드북"처럼 카드 속 인물이 실은
   /// 로그인한 유저 자신인 목록에서, 더미 데이터의 고정 이름 대신 세션
   /// 닉네임을 끼워 넣을 때 쓴다.
@@ -76,5 +82,6 @@ class Guidebook {
         rewardPoint: rewardPoint,
         background: background,
         progress: progress,
+        description: description,
       );
 }

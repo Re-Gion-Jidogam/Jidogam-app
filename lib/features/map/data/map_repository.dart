@@ -6,6 +6,13 @@ import '../../home/models/guidebook.dart';
 import '../models/place.dart';
 import '../models/stamp.dart';
 
+/// 더미 가이드북들이 공유하는 소개글 — home_repository.dart의 것과 같은
+/// 문구를 쓴다(다른 필드들처럼 더미 데이터를 파일 간에 그대로 재사용하는
+/// 기존 컨벤션과 동일).
+const String _burgerGuideDescription =
+    '전주의 다양한 수제버거 맛집을 소개합니다. 직접 반죽한 빵과 신선한 재료로 '
+    '만든 개성 있는 버거들을, 골목골목 숨은 맛집까지 모아 담았습니다...';
+
 /// 지도 탭 더미 데이터 저장소. 추후 API로 교체.
 class MapRepository {
   const MapRepository();
@@ -244,6 +251,59 @@ class MapRepository {
       ),
     ];
   }
+
+  /// 가이드북 브라우징 화면(`GuidebookBrowsePage`)의 일반 목록 — "이 장소가
+  /// 포함된 가이드북"과 "가이드북 검색" 두 진입점이 함께 쓰는 더미 데이터.
+  /// 두 진입점 모두 "특정 카테고리"가 아니라 "어떤 가이드북이든" 보여주는
+  /// 자리라 같은 목록을 공유해도 자연스럽다.
+  List<Guidebook> browsableGuidebooks() {
+    return const <Guidebook>[
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: ImageBackground(AppImages.guidebook1),
+        description: _burgerGuideDescription,
+      ),
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
+        description: _burgerGuideDescription,
+      ),
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: ImageBackground(AppImages.guidebook2),
+        description: _burgerGuideDescription,
+      ),
+      Guidebook(
+        title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
+        level: 3132,
+        authorName: '지나가던 사람',
+        rating: 2.8,
+        placeCount: 483,
+        publishedDate: '2025. 07. 05',
+        rewardPoint: 59390,
+        background: EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
+        description: _burgerGuideDescription,
+      ),
+    ];
+  }
 }
 
 final mapRepositoryProvider = Provider<MapRepository>(
@@ -263,4 +323,8 @@ final recommendedPlacesProvider = Provider<List<Place>>(
 /// 닉네임을 덮어쓴 [challengingGuidebooksProvider](map_providers.dart)를 본다.
 final rawChallengingGuidebooksProvider = Provider<List<Guidebook>>(
   (ref) => ref.watch(mapRepositoryProvider).challengingGuidebooks(),
+);
+
+final browsableGuidebooksProvider = Provider<List<Guidebook>>(
+  (ref) => ref.watch(mapRepositoryProvider).browsableGuidebooks(),
 );

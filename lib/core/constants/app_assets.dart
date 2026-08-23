@@ -29,4 +29,10 @@ abstract final class AppImages {
   static const String travelStamp = '$_base/travel_stamp.png';
   static const String guidebookPromoPopular = '$_base/guidebook_promo_popular.png';
   static const String guidebookPromoWaiting = '$_base/guidebook_promo_waiting.png';
+
+  /// 가이드북 브라우징 화면(`GuidebookBrowsePage`) 카드 뒷면 배경 — 가이드북에
+  /// 포함된 장소들을 도장 마커로 찍어둔 정적 지도. Figma 원본은 사진+지도
+  /// 오버레이 3장을 겹쳐 합성하지만, 더미 단계라 그 합성 결과와 같은 효과를
+  /// 내는 이 한 장으로 단순화했다.
+  static const String guidebookBrowseMap = '$_base/guidebook_browse_map.png';
 }
