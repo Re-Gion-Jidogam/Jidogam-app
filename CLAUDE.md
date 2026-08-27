@@ -40,7 +40,7 @@ flutter test           # 위젯/단위 테스트
 ## 컨벤션
 
 - 작업 브랜치: `feat/<kebab-요약>` (그 외 `fix/`, `chore/`, `docs/`).
-- PR은 `.github/PULL_REQUEST_TEMPLATE.md` 양식을 채운다. 베이스 브랜치는 `main`.
+- PR은 `.github/PULL_REQUEST_TEMPLATE.md` 양식을 채운다. 베이스 브랜치는 `dev`(GitHub 기본 브랜치).
 - 커밋/PR 전 `flutter analyze`와 `flutter test` 통과 확인.
 - 주석·문서는 한국어를 쓴다(팀 컨벤션).
 
