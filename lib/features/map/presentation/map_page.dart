@@ -169,14 +169,23 @@ class _MapPageState extends ConsumerState<MapPage> {
             ),
           ),
 
-          // 현위치 버튼 — 시트 위에 붙어 이동.
+          // 현위치 버튼 — 시트 위에 붙어 이동하되, 시트를 half 위로 올리면
+          // 상단과 겹치지 않게 서서히 사라진다(0.5~0.65 구간 페이드아웃).
           ValueListenableBuilder<double>(
             valueListenable: _extent,
             builder: (BuildContext context, double extent, _) {
+              final double opacity =
+                  (1 - (extent - 0.5) / 0.15).clamp(0.0, 1.0);
               return Positioned(
                 right: 16,
                 bottom: extent * screenHeight + 16,
-                child: CurrentLocationButton(onTap: _handleMyLocation),
+                child: IgnorePointer(
+                  ignoring: opacity == 0,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: CurrentLocationButton(onTap: _handleMyLocation),
+                  ),
+                ),
               );
             },
           ),
