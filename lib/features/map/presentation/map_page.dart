@@ -8,6 +8,7 @@ import '../../../core/widgets/resizable_bottom_sheet.dart';
 import '../../../core/widgets/success_toast.dart';
 import '../../profile/data/user_profile_repository.dart';
 import '../../shell/providers/nav_provider.dart';
+import '../data/location_service.dart';
 import '../data/map_repository.dart';
 import '../map_view.dart';
 import '../models/place.dart';
@@ -85,6 +86,20 @@ class _MapPageState extends ConsumerState<MapPage> {
     showSuccessToast(context, emphasis: place.name, suffix: ' 도장을 지웠어요');
   }
 
+  /// 현위치 버튼 → 위치 권한 확보 후 내 위치로 지도 이동 + 핑 찍기.
+  /// 권한/서비스가 막히면 안내 스낵바를 띄운다.
+  Future<void> _handleMyLocation() async {
+    final result = await resolveCurrentLocation();
+    if (!mounted) return;
+    if (result.latLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error ?? '위치를 가져올 수 없어요')),
+      );
+      return;
+    }
+    ref.read(myLocationProvider.notifier).state = result.latLng;
+  }
+
   String _searchHint(MapSegment segment) => switch (segment) {
         MapSegment.myStamp => '내가 찍은 도장 검색하기',
         MapSegment.place => '어디로 가볼까요?',
@@ -100,6 +115,10 @@ class _MapPageState extends ConsumerState<MapPage> {
     final int? cooldownRemainingMinutes =
         stampCooldownRemainingMinutes(ref.watch(lastStampedAtProvider));
     final double screenHeight = MediaQuery.of(context).size.height;
+    // 시트가 최대로 올라와도 상단 세그먼트/뒤로가기를 가리지 않도록,
+    // 안전영역 + 상단 컨트롤(패딩 8 + 높이 34) + 여백 16만큼을 비워 둔다.
+    final double topReserved = MediaQuery.of(context).padding.top + 8 + 34 + 16;
+    final double sheetMaxSize = 1 - topReserved / screenHeight;
 
     // 다른 세그먼트로 넘어가면 상세 선택을 초기화한다.
     ref.listen<MapSegment>(mapSegmentProvider, (MapSegment? prev, MapSegment next) {
@@ -120,8 +139,9 @@ class _MapPageState extends ConsumerState<MapPage> {
             child: ValueListenableBuilder<double>(
               valueListenable: _extent,
               builder: (BuildContext context, double extent, _) {
+                // 시트 최대치 근처(위 0.18 구간)에서 dimmer가 서서히 짙어진다.
                 final double t =
-                    ((extent - 0.7) / (0.95 - 0.7)).clamp(0.0, 1.0);
+                    ((extent - (sheetMaxSize - 0.18)) / 0.18).clamp(0.0, 1.0);
                 return IgnorePointer(
                   child: ColoredBox(
                     color: Colors.black.withValues(alpha: 0.2 * t),
@@ -149,14 +169,23 @@ class _MapPageState extends ConsumerState<MapPage> {
             ),
           ),
 
-          // 현위치 버튼 — 시트 위에 붙어 이동.
+          // 현위치 버튼 — 시트 위에 붙어 이동하되, 시트를 half 위로 올리면
+          // 상단과 겹치지 않게 서서히 사라진다(0.5~0.65 구간 페이드아웃).
           ValueListenableBuilder<double>(
             valueListenable: _extent,
             builder: (BuildContext context, double extent, _) {
+              final double opacity =
+                  (1 - (extent - 0.5) / 0.15).clamp(0.0, 1.0);
               return Positioned(
                 right: 16,
                 bottom: extent * screenHeight + 16,
-                child: CurrentLocationButton(onTap: () {}),
+                child: IgnorePointer(
+                  ignoring: opacity == 0,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: CurrentLocationButton(onTap: _handleMyLocation),
+                  ),
+                ),
               );
             },
           ),
@@ -169,6 +198,7 @@ class _MapPageState extends ConsumerState<MapPage> {
             },
             child: ResizableBottomSheet(
               controller: _sheetController,
+              maxChildSize: sheetMaxSize,
               contentBuilder: (BuildContext context,
                       ScrollController scrollController) =>
                   _SheetContent(
