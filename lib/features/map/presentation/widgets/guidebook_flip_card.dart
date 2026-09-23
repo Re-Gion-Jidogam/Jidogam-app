@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/chevron_right.dart';
 import '../../../home/models/guidebook.dart';
 import '../../../home/widgets/guidebook_card.dart';
 
@@ -110,7 +110,9 @@ class _GuidebookFlipCardState extends State<GuidebookFlipCard>
 }
 
 /// [GuidebookFlipCard]의 뒷면 — 지도(장소 도장 마커) 배경 위에 밝은
-/// 그라데이션과 소개글을 얹는다(Figma `card-front-detail`).
+/// 그라데이션과 소개글을 얹는다(Figma `card-front-detail`). 앞면(제목·별점·
+/// Lv/작성자·장소수·출판일·리워드)과 겹치는 정보는 다시 보여주지 않고,
+/// 앞면에 없는 소개글만 담는다.
 class _GuidebookCardBack extends StatelessWidget {
   const _GuidebookCardBack(this.guidebook);
 
@@ -130,19 +132,9 @@ class _GuidebookCardBack extends StatelessWidget {
         fit: StackFit.expand,
         children: <Widget>[
           Image.asset(AppImages.guidebookBrowseMap, fit: BoxFit.cover),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: RatingBadge(guidebook.rating),
-                ),
-              ),
-              const Spacer(),
-              _BackDetail(guidebook),
-            ],
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _BackDetail(guidebook),
           ),
         ],
       ),
@@ -155,44 +147,39 @@ class _BackDetail extends StatelessWidget {
 
   final Guidebook guidebook;
 
+  // Figma `card-front-detail`(91:5237) 스펙: backdrop-blur 20px 고정.
+  // (위쪽만 슬라이스로 서서히 강하게 해봤다가 경계에 단차가 보여서 되돌림)
+  static const double _blur = 20;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[Color(0x00FFFFFF), Color(0xCCFFFFFF)],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  guidebook.title,
-                  style: AppTextStyles.cardTitle18,
-                ),
-              ),
-              const ChevronRight(length: 14),
-            ],
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: _blur, sigmaY: _blur),
+        child: Container(
+          width: double.infinity,
+          // Figma는 고정 높이 200이지만 우리 더미 소개글(3줄)엔 부족해
+          // 넘친다 — 높이는 내용에 맞춰 늘리고, 그라데이션 스펙만 따른다.
+          padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
+          decoration: const BoxDecoration(
+            // Figma 그라데이션(0%/28%/80% 불투명도)보다 아래쪽이 더 진하게
+            // 보이도록 70%/85%로 올렸다.
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: <Color>[Color(0x00FFFFFF), Color(0xB3FFFFFF), Color(0xD9FFFFFF)],
+              stops: <double>[0.0, 0.28, 1.0],
+            ),
           ),
-          const SizedBox(height: 6),
-          Opacity(opacity: 0.8, child: _MetaLines(guidebook)),
-          const SizedBox(height: 8),
-          Text(
+          child: Text(
             guidebook.description ?? _fallbackDescription,
-            maxLines: 3,
+            // 카드는 고정 높이(400)라 너무 긴 소개글은 잘라준다.
+            maxLines: 5,
             overflow: TextOverflow.ellipsis,
             style: AppTextStyles.placeMeta
                 .copyWith(fontSize: 12, height: 1.4, color: AppColors.sheetTitle),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -201,65 +188,3 @@ class _BackDetail extends StatelessWidget {
 /// [Guidebook.description]이 없는 더미 데이터(예: "도전중인 가이드북")를
 /// 이 화면에서 보게 될 경우를 위한 대체 문구.
 const String _fallbackDescription = '아직 소개글이 없는 가이드북이에요.';
-
-class _MetaLines extends StatelessWidget {
-  const _MetaLines(this.guidebook);
-
-  final Guidebook guidebook;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextStyle medium =
-        AppTextStyles.cardMetaMedium.copyWith(color: AppColors.textSecondary);
-    final TextStyle bold =
-        AppTextStyles.cardMetaBold.copyWith(color: AppColors.textSecondary);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text('Lv. ${guidebook.level} · ${guidebook.authorName}', style: medium),
-        const SizedBox(height: 2),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  children: <InlineSpan>[
-                    TextSpan(text: '총 ', style: medium),
-                    TextSpan(text: '${guidebook.placeCount}개', style: bold),
-                    TextSpan(text: '의 장소 · ', style: medium),
-                    TextSpan(
-                        text: '${guidebook.publishedDate}에 출판', style: medium),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        Text.rich(
-          TextSpan(
-            children: <InlineSpan>[
-              TextSpan(text: '가이드북 완료시 ', style: medium),
-              TextSpan(
-                text: '${_formatThousands(guidebook.rewardPoint)}p',
-                style: bold,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-String _formatThousands(int value) {
-  final String digits = value.toString();
-  final StringBuffer buffer = StringBuffer();
-  for (int i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(',');
-    buffer.write(digits[i]);
-  }
-  return buffer.toString();
-}

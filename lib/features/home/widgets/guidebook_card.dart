@@ -55,7 +55,10 @@ class GuidebookCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
                   child: progress == null
-                      ? RatingBadge(guidebook.rating)
+                      ? Align(
+                          alignment: Alignment.centerLeft,
+                          child: RatingBadge(guidebook.rating),
+                        )
                       : _ProgressBadge(progress),
                 ),
                 const Spacer(),
@@ -276,7 +279,8 @@ class _CardBackDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRect(
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        // Figma `card-back-detail` 스펙 — backdrop-filter: blur(50px).
+        filter: ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
