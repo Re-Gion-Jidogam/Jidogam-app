@@ -16,11 +16,15 @@ class GuidebookFilterChip extends StatelessWidget {
     required this.icon,
     required this.label,
     this.onTap,
+    this.selected = false,
   });
 
   final Widget icon;
   final String label;
   final VoidCallback? onTap;
+
+  /// 선택 상태(옅은 초록). Figma엔 없지만 필터 적용 여부 표시용으로 추가.
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +34,11 @@ class GuidebookFilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
+          color: selected ? AppColors.primary300.withValues(alpha: 0.12) : null,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: AppColors.gray400),
+          border: Border.all(
+            color: selected ? AppColors.primary300 : AppColors.gray400,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

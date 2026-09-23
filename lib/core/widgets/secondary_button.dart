@@ -8,6 +8,7 @@ import '../theme/app_text_styles.dart';
 /// [PrimaryButton]과 짝을 이뤄 나란히 쓰는 보조 액션(예: "내 가이드북에 추가")용.
 /// [borderColor]/[textColor]로 색을 바꿀 수 있다 — "도장 지우기"처럼 같은
 /// 아웃라인 모양에 위험(빨강) 색만 필요한 경우 새 위젯 없이 재사용한다.
+/// [backgroundColor]를 투명으로 주면 배경을 그대로 비춰 덜 강조된다.
 class SecondaryButton extends StatelessWidget {
   const SecondaryButton({
     super.key,
@@ -15,12 +16,16 @@ class SecondaryButton extends StatelessWidget {
     this.onPressed,
     this.borderColor = AppColors.primary300,
     this.textColor = AppColors.primary400,
+    this.backgroundColor = AppColors.surface,
+    this.borderWidth = 1.5,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final Color borderColor;
   final Color textColor;
+  final Color backgroundColor;
+  final double borderWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +38,11 @@ class SecondaryButton extends StatelessWidget {
         width: double.infinity,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: enabled ? borderColor : borderColor.withValues(alpha: 0.4),
-            width: 1.5,
+            width: borderWidth,
           ),
         ),
         child: Text(

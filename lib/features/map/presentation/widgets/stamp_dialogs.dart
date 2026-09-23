@@ -89,9 +89,74 @@ Future<bool> showStampRemoveDialog(
   return result ?? false;
 }
 
-/// 도장찍기/도장 지우기 확인 다이얼로그 공통 셸(Figma `Modal Content/default`).
-/// 헤더(타이틀+닫기)·중앙 메시지·취소/확인 버튼 구조가 두 액션 모두 같아서,
-/// 문구·색만 바꿔 하나의 셸로 재사용한다.
+/// "도전 취소" 확인 다이얼로그. 확인하면 true.
+Future<bool> showChallengeCancelDialog(
+  BuildContext context, {
+  required String guidebookTitle,
+}) async {
+  final bool? result = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.2),
+    builder: (_) => _StampActionDialog(
+      title: '도전 취소',
+      confirmLabel: '도전 취소',
+      confirmColor: AppColors.red200,
+      message: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            guidebookTitle,
+            style: _messageStyle.copyWith(fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+          Text('도전을 취소할까요?', style: _messageStyle, textAlign: TextAlign.center),
+          const SizedBox(height: 14),
+          Text(
+            '다시 도전하면 달성 경험치가\n지금과 달라질 수 있어요.',
+            style: _messageStyle.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.red300,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
+  );
+  return result ?? false;
+}
+
+/// 리뷰 작성 중 이탈 확인 다이얼로그. "나가기"면 true.
+Future<bool> showReviewDiscardDialog(BuildContext context) async {
+  final bool? result = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.2),
+    builder: (_) => _StampActionDialog(
+      title: '리뷰쓰기',
+      confirmLabel: '나가기',
+      confirmColor: AppColors.red200,
+      message: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text('리뷰 작성을 그만둘까요?',
+              style: _messageStyle, textAlign: TextAlign.center),
+          const SizedBox(height: 14),
+          Text(
+            '지금 나가면 작성한 내용이 사라져요.',
+            style: _messageStyle.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.red300,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
+  );
+  return result ?? false;
+}
+
+/// 확인 다이얼로그 공통 셸(Figma `Modal Content/default`) — 문구·색만 바꿔 쓴다.
 class _StampActionDialog extends StatelessWidget {
   const _StampActionDialog({
     required this.title,

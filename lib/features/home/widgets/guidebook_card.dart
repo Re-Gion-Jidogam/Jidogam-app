@@ -20,12 +20,16 @@ class GuidebookCard extends StatelessWidget {
     this.guidebook, {
     super.key,
     this.onTap,
+    this.onDetailTap,
     this.width = 240,
     this.height = 278,
   });
 
   final Guidebook guidebook;
   final VoidCallback? onTap;
+
+  /// 하단 텍스트 영역 탭. null이면 [onTap]을 쓴다.
+  final VoidCallback? onDetailTap;
   final double width;
   final double height;
 
@@ -59,10 +63,10 @@ class GuidebookCard extends StatelessWidget {
                           alignment: Alignment.centerLeft,
                           child: RatingBadge(guidebook.rating),
                         )
-                      : _ProgressBadge(progress),
+                      : ProgressBadge(progress),
                 ),
                 const Spacer(),
-                _CardBackDetail(guidebook),
+                _CardBackDetail(guidebook, onTap: onDetailTap),
               ],
             ),
             Positioned(
@@ -191,14 +195,23 @@ class RatingBadge extends StatelessWidget {
   }
 }
 
-/// 상단 진행률 배지 — 진행률만큼 흰 부분이 실제로 채워지는 진행 바(Figma
-/// `card-star` progress 변형). [guidebook.progress]가 있는 카드(도전 중)에서
-/// [RatingBadge] 대신 뜬다. 흰 채움 위엔 "N% 완료", 안 채워진 반투명 트랙
-/// 위엔 "완료수 / 전체수"가 겹쳐진다.
-class _ProgressBadge extends StatelessWidget {
-  const _ProgressBadge(this.progress);
+/// 진행률 배지(Figma `card-star` progress 변형) — 도전 중 카드에서
+/// [RatingBadge] 대신 뜬다. 가이드북 상세 화면도 함께 쓴다.
+class ProgressBadge extends StatelessWidget {
+  const ProgressBadge(
+    this.progress, {
+    super.key,
+    this.outerShadow,
+    this.trackColor = const Color(0x66FFFFFF),
+  });
 
   final GuidebookProgress progress;
+
+  /// 배지 바깥에만 그리는 그림자(반투명 트랙 안쪽엔 비치지 않게).
+  final List<BoxShadow>? outerShadow;
+
+  /// 안 채워진 트랙 색. 밝은 배경 위에선 흰 채움과 구분되게 회색을 준다.
+  final Color trackColor;
 
   static const double _height = 26;
 
@@ -207,14 +220,14 @@ class _ProgressBadge extends StatelessWidget {
     final double fraction = progress.total == 0
         ? 0
         : (progress.completed / progress.total).clamp(0.0, 1.0);
-    return ClipRRect(
+    final Widget badge = ClipRRect(
       borderRadius: BorderRadius.circular(100),
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
         child: Container(
           height: _height,
           decoration: BoxDecoration(
-            color: const Color(0x66FFFFFF),
+            color: trackColor,
             borderRadius: BorderRadius.circular(100),
             border: Border.all(color: const Color(0x66FFFFFF)),
             boxShadow: const <BoxShadow>[
@@ -266,50 +279,92 @@ class _ProgressBadge extends StatelessWidget {
         ),
       ),
     );
+    if (outerShadow == null) return badge;
+    return CustomPaint(
+      painter: _OuterShadowPainter(outerShadow!),
+      child: badge,
+    );
   }
+}
+
+/// 알약 모양 바깥에만 그림자를 그린다.
+class _OuterShadowPainter extends CustomPainter {
+  const _OuterShadowPainter(this.shadows);
+
+  final List<BoxShadow> shadows;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect rect = Offset.zero & size;
+    final RRect shape =
+        RRect.fromRectAndRadius(rect, Radius.circular(size.height / 2));
+    // 알약 안쪽을 오려낸 영역으로 클립.
+    final Path outside = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(rect.inflate(100))
+      ..addRRect(shape);
+    canvas.save();
+    canvas.clipPath(outside);
+    for (final BoxShadow shadow in shadows) {
+      canvas.drawRRect(
+        shape.shift(shadow.offset).inflate(shadow.spreadRadius),
+        shadow.toPaint(),
+      );
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_OuterShadowPainter oldDelegate) =>
+      oldDelegate.shadows != shadows;
 }
 
 /// 하단 그라데이션 정보 오버레이.
 class _CardBackDetail extends StatelessWidget {
-  const _CardBackDetail(this.guidebook);
+  const _CardBackDetail(this.guidebook, {this.onTap});
 
   final Guidebook guidebook;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        // Figma `card-back-detail` 스펙 — backdrop-filter: blur(50px).
-        filter: ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: <Color>[Color(0x00000000), Color(0x33000000)],
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: ClipRect(
+        child: BackdropFilter(
+          // Figma `card-back-detail` 스펙 — backdrop-filter: blur(50px).
+          filter: ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[Color(0x00000000), Color(0x33000000)],
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                guidebook.title,
-                style: AppTextStyles.cardTitle18.copyWith(
-                  color: Colors.white,
-                  shadows: const <Shadow>[
-                    Shadow(color: Color(0x33000000), blurRadius: 10),
-                  ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  guidebook.title,
+                  style: AppTextStyles.cardTitle18.copyWith(
+                    color: Colors.white,
+                    shadows: const <Shadow>[
+                      Shadow(color: Color(0x33000000), blurRadius: 10),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Opacity(
-                opacity: 0.8,
-                child: _MetaBlock(guidebook),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Opacity(
+                  opacity: 0.8,
+                  child: _MetaBlock(guidebook),
+                ),
+              ],
+            ),
           ),
         ),
       ),

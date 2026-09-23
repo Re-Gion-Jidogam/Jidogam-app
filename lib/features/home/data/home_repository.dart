@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_assets.dart';
+import '../../map/data/map_repository.dart';
+import '../../map/models/place.dart' as map;
 import '../models/guidebook.dart';
 import '../models/place.dart';
 
@@ -20,59 +22,69 @@ class HomeRepository {
 
   /// "당신을 기다리는 곳" — 이모지 패턴형 가이드북.
   List<Guidebook> waitingForYou() {
-    return const <Guidebook>[
+    final List<map.Place> places = _guidebookPlaces();
+    return <Guidebook>[
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
+        background: const EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
         description: _burgerGuideDescription,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
+        background: const EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
         description: _burgerGuideDescription,
+        places: places,
       ),
     ];
   }
 
   /// "인기 가이드북" — 사진형 가이드북.
   List<Guidebook> popularGuidebooks() {
-    return const <Guidebook>[
+    final List<map.Place> places = _guidebookPlaces();
+    return <Guidebook>[
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: ImageBackground(AppImages.guidebook1),
+        background: const ImageBackground(AppImages.guidebook1),
         description: _burgerGuideDescription,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: ImageBackground(AppImages.guidebook2),
+        background: const ImageBackground(AppImages.guidebook2),
         description: _burgerGuideDescription,
+        places: places,
       ),
     ];
   }
+
+  /// 상세 화면 장소 더미(지도 탭과 공유). 리뷰는 빈 상태 확인용으로 비워둔다.
+  List<map.Place> _guidebookPlaces() =>
+      const MapRepository().guidebookDetailPlaces();
 
   /// "인기 장소" — 장소 카드.
   List<Place> popularPlaces() {

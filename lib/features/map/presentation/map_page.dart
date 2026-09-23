@@ -20,6 +20,7 @@ import '../models/place.dart';
 import '../models/stamp.dart';
 import '../providers/map_providers.dart';
 import 'guidebook_browse_page.dart';
+import 'guidebook_detail_page.dart';
 import 'widgets/current_location_button.dart';
 import 'widgets/guidebook_filter_chip.dart';
 import 'widgets/guidebook_promo_card.dart';
@@ -117,6 +118,15 @@ class _MapPageState extends ConsumerState<MapPage> {
           resultCountLabel: resultCountLabel,
           searchHint: searchHint,
         ),
+      ),
+    );
+  }
+
+  /// "도전중인 가이드북" 카드 탭 → 상세 화면.
+  void _openGuidebookDetail(Guidebook guidebook) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GuidebookDetailPage(guidebook),
       ),
     );
   }
@@ -234,6 +244,7 @@ class _MapPageState extends ConsumerState<MapPage> {
                 onStamp: _handleStamp,
                 onRemoveStamp: _handleRemoveStamp,
                 onOpenGuidebookBrowse: _openGuidebookBrowse,
+                onOpenGuidebookDetail: _openGuidebookDetail,
               ),
             ),
           ),
@@ -264,6 +275,7 @@ class _SheetContent extends StatelessWidget {
     required this.onStamp,
     required this.onRemoveStamp,
     required this.onOpenGuidebookBrowse,
+    required this.onOpenGuidebookDetail,
   });
 
   final ScrollController scrollController;
@@ -308,6 +320,9 @@ class _SheetContent extends StatelessWidget {
     required String resultCountLabel,
     String? searchHint,
   }) onOpenGuidebookBrowse;
+
+  /// "도전중인 가이드북" 카드 탭 콜백.
+  final ValueChanged<Guidebook> onOpenGuidebookDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -514,7 +529,7 @@ class _SheetContent extends StatelessWidget {
             guidebooks[i],
             width: double.infinity,
             height: 196,
-            onTap: () {},
+            onTap: () => onOpenGuidebookDetail(guidebooks[i]),
           ),
         ],
       ],

@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../home/models/guidebook.dart';
 import '../../../home/widgets/guidebook_card.dart';
+import '../guidebook_detail_page.dart';
 
 /// 가이드북 브라우징 화면(`GuidebookBrowsePage`)에서 카드 한 장씩 넘겨보는
 /// 카드 — [GuidebookCard]와 똑같은 앞면으로 시작해서, 잠시 멈춰 있으면
@@ -73,6 +74,15 @@ class _GuidebookFlipCardState extends State<GuidebookFlipCard>
     }
   }
 
+  /// 하단 텍스트 영역 탭은 상세 화면, 나머지 탭은 [_flip].
+  void _openDetail() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GuidebookDetailPage(widget.guidebook),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -95,12 +105,16 @@ class _GuidebookFlipCardState extends State<GuidebookFlipCard>
                     // 뒷면 콘텐츠 자체가 거울상으로 보이지 않도록 180°
                     // 되돌려 그린다.
                     transform: Matrix4.identity()..rotateY(math.pi),
-                    child: _GuidebookCardBack(widget.guidebook),
+                    child: _GuidebookCardBack(
+                      widget.guidebook,
+                      onDetailTap: _openDetail,
+                    ),
                   )
                 : GuidebookCard(
                     widget.guidebook,
                     width: GuidebookFlipCard.width,
                     height: GuidebookFlipCard.height,
+                    onDetailTap: _openDetail,
                   ),
           );
         },
@@ -114,9 +128,10 @@ class _GuidebookFlipCardState extends State<GuidebookFlipCard>
 /// Lv/작성자·장소수·출판일·리워드)과 겹치는 정보는 다시 보여주지 않고,
 /// 앞면에 없는 소개글만 담는다.
 class _GuidebookCardBack extends StatelessWidget {
-  const _GuidebookCardBack(this.guidebook);
+  const _GuidebookCardBack(this.guidebook, {this.onDetailTap});
 
   final Guidebook guidebook;
+  final VoidCallback? onDetailTap;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +149,7 @@ class _GuidebookCardBack extends StatelessWidget {
           Image.asset(AppImages.guidebookBrowseMap, fit: BoxFit.cover),
           Align(
             alignment: Alignment.bottomCenter,
-            child: _BackDetail(guidebook),
+            child: _BackDetail(guidebook, onTap: onDetailTap),
           ),
         ],
       ),
@@ -143,9 +158,10 @@ class _GuidebookCardBack extends StatelessWidget {
 }
 
 class _BackDetail extends StatelessWidget {
-  const _BackDetail(this.guidebook);
+  const _BackDetail(this.guidebook, {this.onTap});
 
   final Guidebook guidebook;
+  final VoidCallback? onTap;
 
   // Figma `card-front-detail`(91:5237) 스펙: backdrop-blur 20px 고정.
   // (위쪽만 슬라이스로 서서히 강하게 해봤다가 경계에 단차가 보여서 되돌림)
@@ -153,31 +169,33 @@ class _BackDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: _blur, sigmaY: _blur),
-        child: Container(
-          width: double.infinity,
-          // Figma는 고정 높이 200이지만 우리 더미 소개글(3줄)엔 부족해
-          // 넘친다 — 높이는 내용에 맞춰 늘리고, 그라데이션 스펙만 따른다.
-          padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
-          decoration: const BoxDecoration(
-            // Figma 그라데이션(0%/28%/80% 불투명도)보다 아래쪽이 더 진하게
-            // 보이도록 70%/85%로 올렸다.
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: <Color>[Color(0x00FFFFFF), Color(0xB3FFFFFF), Color(0xD9FFFFFF)],
-              stops: <double>[0.0, 0.28, 1.0],
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: _blur, sigmaY: _blur),
+          child: Container(
+            width: double.infinity,
+            // Figma는 높이 200 고정이지만 소개글이 넘쳐 내용 높이를 따른다.
+            padding: const EdgeInsets.fromLTRB(18, 32, 18, 18),
+            decoration: const BoxDecoration(
+              // 가독성 위해 Figma(28%/80%)보다 진하게(70%/85%).
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[Color(0x00FFFFFF), Color(0xB3FFFFFF), Color(0xD9FFFFFF)],
+                stops: <double>[0.0, 0.28, 1.0],
+              ),
             ),
-          ),
-          child: Text(
-            guidebook.description ?? _fallbackDescription,
-            // 카드는 고정 높이(400)라 너무 긴 소개글은 잘라준다.
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.placeMeta
-                .copyWith(fontSize: 12, height: 1.4, color: AppColors.sheetTitle),
+            child: Text(
+              guidebook.description ?? _fallbackDescription,
+              // 카드 높이 고정(400)이라 긴 소개글은 자른다.
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.placeMeta.copyWith(
+                  fontSize: 12, height: 1.4, color: AppColors.sheetTitle),
+            ),
           ),
         ),
       ),

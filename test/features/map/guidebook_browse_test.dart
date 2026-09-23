@@ -6,6 +6,7 @@ import 'package:jidogam/app.dart';
 import 'package:jidogam/features/home/models/guidebook.dart';
 import 'package:jidogam/features/map/data/map_repository.dart';
 import 'package:jidogam/features/map/presentation/guidebook_browse_page.dart';
+import 'package:jidogam/features/map/presentation/guidebook_detail_page.dart';
 import 'package:jidogam/features/map/presentation/widgets/guidebook_flip_card.dart';
 import 'package:jidogam/features/map/presentation/widgets/guidebook_promo_card.dart';
 import 'package:jidogam/features/map/presentation/widgets/place_list_card.dart';
@@ -99,6 +100,50 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('전주의 다양한 수제버거 맛집'), findsNothing);
+  });
+
+  testWidgets('앞면의 하단 텍스트 영역을 탭하면 뒤집히지 않고 곧장 상세 화면으로 이동한다',
+      (WidgetTester tester) async {
+    final Guidebook guidebook = const MapRepository().browsableGuidebooks().first;
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: Center(child: GuidebookFlipCard(guidebook))),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 카드 하단 텍스트 영역을 탭한다(중앙 뒤집기 영역과 안 겹침).
+    final Rect cardRect = tester.getRect(find.byType(GuidebookFlipCard));
+    await tester.tapAt(cardRect.bottomCenter - const Offset(0, 12));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GuidebookDetailPage), findsOneWidget);
+  });
+
+  testWidgets('뒷면의 소개글 영역을 탭해도 곧장 상세 화면으로 이동한다',
+      (WidgetTester tester) async {
+    final Guidebook guidebook = const MapRepository().browsableGuidebooks().first;
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: Center(child: GuidebookFlipCard(guidebook))),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 카드 중앙 탭으로 뒷면으로 뒤집는다.
+    await tester.tap(find.byType(GuidebookFlipCard));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('전주의 다양한 수제버거 맛집'), findsOneWidget);
+
+    // 소개글을 탭하면 상세로 이동한다.
+    await tester.tap(find.textContaining('전주의 다양한 수제버거 맛집'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GuidebookDetailPage), findsOneWidget);
   });
 
   testWidgets('가만히 3초 이상 두면 카드가 저절로 뒤집힌다', (WidgetTester tester) async {

@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../theme/app_text_styles.dart';
+import 'circle_back_button.dart';
 
 /// 드래그로 높이를 조절하는 재사용 바텀시트 (지도 컨벤션).
 ///
@@ -20,6 +21,7 @@ class ResizableBottomSheet extends StatelessWidget {
     this.maxChildSize = 0.95,
     this.snapSizes = const <double>[0.45],
     this.title,
+    this.onBack,
   });
 
   final Widget Function(BuildContext, ScrollController) contentBuilder;
@@ -29,6 +31,9 @@ class ResizableBottomSheet extends StatelessWidget {
   final double maxChildSize;
   final List<double> snapSizes;
   final String? title;
+
+  /// null이 아니면 좌상단에 원형 뒤로가기 버튼을 띄운다.
+  final VoidCallback? onBack;
 
   static const double _radius = 20;
 
@@ -54,23 +59,34 @@ class ResizableBottomSheet extends StatelessWidget {
                 borderRadius:
                     BorderRadius.vertical(top: Radius.circular(_radius)),
               ),
-              child: Column(
+              child: Stack(
                 children: <Widget>[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 48,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0x4D000000),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                  Column(
+                    children: <Widget>[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 48,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0x4D000000),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      if (title != null) ...<Widget>[
+                        const SizedBox(height: 18),
+                        Text(title!, style: AppTextStyles.sheetTitle),
+                      ],
+                      const SizedBox(height: 18),
+                      Expanded(
+                          child: contentBuilder(context, scrollController)),
+                    ],
                   ),
-                  if (title != null) ...<Widget>[
-                    const SizedBox(height: 18),
-                    Text(title!, style: AppTextStyles.sheetTitle),
-                  ],
-                  const SizedBox(height: 18),
-                  Expanded(child: contentBuilder(context, scrollController)),
+                  if (onBack != null)
+                    Positioned(
+                      left: 12,
+                      top: 12,
+                      child: CircleBackButton(onTap: onBack!),
+                    ),
                 ],
               ),
             ),

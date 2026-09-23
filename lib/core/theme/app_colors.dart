@@ -61,6 +61,15 @@ abstract final class AppColors {
     ),
   ];
 
+  /// 밝은 배경 위 강조용 그림자 — 0/4, blur 16, black 12%.
+  static const List<BoxShadow> raisedShadow = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x1F000000),
+      offset: Offset(0, 4),
+      blurRadius: 16,
+    ),
+  ];
+
   /// placeCard / 카드 그림자 — drop shadow 0/4, blur 10, black 10%.
   static const List<BoxShadow> cardShadow = <BoxShadow>[
     BoxShadow(

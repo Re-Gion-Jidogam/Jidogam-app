@@ -1,5 +1,8 @@
 import 'package:flutter/painting.dart';
 
+import '../../map/models/place.dart';
+import 'guidebook_review.dart';
+
 /// 가이드북 카드 배경. 이모지 패턴형 또는 사진형 두 가지.
 sealed class GuidebookBackground {
   const GuidebookBackground();
@@ -44,6 +47,9 @@ class Guidebook {
     required this.background,
     this.progress,
     this.description,
+    this.reviewCount = 0,
+    this.reviews = const <GuidebookReview>[],
+    this.places = const <Place>[],
   });
 
   final String title;
@@ -69,6 +75,15 @@ class Guidebook {
   /// (이 필드가 없는 기존 더미 데이터를 전부 고칠 필요가 없도록).
   final String? description;
 
+  /// 상세 화면 "N개의 리뷰" 수 — [reviews] 길이와 무관한 더미.
+  final int reviewCount;
+
+  /// 상세 화면 리뷰 목록.
+  final List<GuidebookReview> reviews;
+
+  /// 포함된 장소들(상세 화면 장소 리스트).
+  final List<Place> places;
+
   /// [authorName]만 바꾼 사본. "도전중인 가이드북"처럼 카드 속 인물이 실은
   /// 로그인한 유저 자신인 목록에서, 더미 데이터의 고정 이름 대신 세션
   /// 닉네임을 끼워 넣을 때 쓴다.
@@ -83,5 +98,8 @@ class Guidebook {
         background: background,
         progress: progress,
         description: description,
+        reviewCount: reviewCount,
+        reviews: reviews,
+        places: places,
       );
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_assets.dart';
 import '../../home/models/guidebook.dart';
+import '../../home/models/guidebook_review.dart';
 import '../models/place.dart';
 import '../models/stamp.dart';
 
@@ -12,6 +13,31 @@ import '../models/stamp.dart';
 const String _burgerGuideDescription =
     '전주의 다양한 수제버거 맛집을 소개합니다. 직접 반죽한 빵과 신선한 재료로 '
     '만든 개성 있는 버거들을, 골목골목 숨은 맛집까지 모아 담았습니다...';
+
+/// 상세 화면 리뷰 더미 — 모든 더미 가이드북이 공유한다.
+const List<GuidebookReview> _burgerGuideReviews = <GuidebookReview>[
+  GuidebookReview(
+    rating: 2.8,
+    timeAgo: '8시간 전',
+    authorName: '지나가던 사람',
+    authorLevel: 1384,
+    content: '너무 맛있고 성능이 훌륭합니다. 스트레스 해소가 잘 되네요.',
+  ),
+  GuidebookReview(
+    rating: 4.2,
+    timeAgo: '1일 전',
+    authorName: '햄버거 마니아',
+    authorLevel: 872,
+    content: '리스트 따라 다녀봤는데 숨은 맛집이 진짜 많아요. 강추합니다.',
+  ),
+  GuidebookReview(
+    rating: 3.5,
+    timeAgo: '3일 전',
+    authorName: '전주 토박이',
+    authorLevel: 214,
+    content: '동네 사람만 아는 곳까지 들어있어서 놀랐어요.',
+  ),
+];
 
 /// 지도 탭 더미 데이터 저장소. 추후 API로 교체.
 class MapRepository {
@@ -203,53 +229,81 @@ class MapRepository {
 
   /// "가이드북" 탭 "도전중인 가이드북" — 내가 참여 중인, 즉 아직 완료 전인
   /// 가이드북들이라 전부 별점 배지 대신 진행률 배지를 보여준다.
+  /// 장소 수·진행률은 [guidebookDetailPlaces]에 맞춘다(10곳 중 2곳 방문).
   List<Guidebook> challengingGuidebooks() {
-    return const <Guidebook>[
+    final List<Place> places = guidebookDetailPlaces();
+    return <Guidebook>[
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
-        progress: GuidebookProgress(completed: 193, total: 483),
+        background:
+            const EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
+        progress: const GuidebookProgress(completed: 2, total: 10),
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: ImageBackground(AppImages.guidebook1),
-        progress: GuidebookProgress(completed: 1827, total: 2343),
+        background: const ImageBackground(AppImages.guidebook1),
+        progress: const GuidebookProgress(completed: 2, total: 10),
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: ImageBackground(AppImages.guidebook2),
-        progress: GuidebookProgress(completed: 72, total: 483),
+        background: const ImageBackground(AppImages.guidebook2),
+        progress: const GuidebookProgress(completed: 2, total: 10),
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
-        progress: GuidebookProgress(completed: 447, total: 483),
+        background:
+            const EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
+        progress: const GuidebookProgress(completed: 2, total: 10),
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
     ];
+  }
+
+  /// 상세 화면 장소 더미 — 추천 리스트 재사용, 앞 2곳은 방문완료.
+  /// 홈 레포지토리도 같은 목록을 쓴다.
+  List<Place> guidebookDetailPlaces() {
+    return recommendedPlaces()
+        .asMap()
+        .entries
+        .map((MapEntry<int, Place> e) => e.key < 2
+            ? e.value.withVisitedDate(DateTime(2025, 5, 14))
+            : e.value)
+        .toList();
   }
 
   /// 가이드북 브라우징 화면(`GuidebookBrowsePage`)의 일반 목록 — "이 장소가
@@ -257,50 +311,67 @@ class MapRepository {
   /// 두 진입점 모두 "특정 카테고리"가 아니라 "어떤 가이드북이든" 보여주는
   /// 자리라 같은 목록을 공유해도 자연스럽다.
   List<Guidebook> browsableGuidebooks() {
-    return const <Guidebook>[
+    final List<Place> places = guidebookDetailPlaces();
+    return <Guidebook>[
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: ImageBackground(AppImages.guidebook1),
+        background: const ImageBackground(AppImages.guidebook1),
         description: _burgerGuideDescription,
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
+        background:
+            const EmojiBackground(color: Color(0xFFFFFF99), emoji: '🤔'),
         description: _burgerGuideDescription,
+        // 도전 중 상태 시연용.
+        progress: const GuidebookProgress(completed: 2, total: 10),
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: ImageBackground(AppImages.guidebook2),
+        background: const ImageBackground(AppImages.guidebook2),
         description: _burgerGuideDescription,
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
       Guidebook(
         title: '햄버거에 미친 사람이 만든 전주 수제버거 맛집들',
         level: 3132,
         authorName: '지나가던 사람',
         rating: 2.8,
-        placeCount: 483,
+        placeCount: 10,
         publishedDate: '2025. 07. 05',
         rewardPoint: 59390,
-        background: EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
+        background:
+            const EmojiBackground(color: Color(0xFF99B9FF), emoji: '🎉'),
         description: _burgerGuideDescription,
+        reviewCount: 881,
+        reviews: _burgerGuideReviews,
+        places: places,
       ),
     ];
   }
