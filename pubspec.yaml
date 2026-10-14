@@ -21,6 +21,8 @@ dependencies:
 
   # Lottie animations (confetti on signup completion)
   lottie: ^3.1.3
+  kakao_map_plugin: ^0.4.0
+  geolocator: ^14.0.3
 
 dev_dependencies:
   flutter_test:

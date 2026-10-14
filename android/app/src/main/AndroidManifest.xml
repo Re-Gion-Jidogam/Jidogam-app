@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 카카오맵 WebView가 지도 JS SDK를 인터넷에서 로드한다. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 현위치 버튼: 내 위치 조회. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="jidogam"
         android:name="${applicationName}"

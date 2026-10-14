@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- 카카오맵 WebView가 일부 지도 타일을 http로 로드한다. WebView 콘텐츠에
+	     한해 http를 허용해 타일이 차단되지 않게 한다(앱 나머지 ATS는 유지). -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+	</dict>
+	<!-- 현위치 버튼: 내 위치를 지도에 표시하기 위한 위치 권한. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>내 위치를 지도에 표시하기 위해 위치 권한이 필요해요.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
